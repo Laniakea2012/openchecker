@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: openchecker-main-service
+  name: openchecker-test-main-service
   namespace: openchecker
 spec:
   selector:
-    app: openchecker-main
+    app: openchecker-test-main
   ports:
   - protocol: TCP
     port: 80
@@ -16,7 +16,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: openchecker-main-ingress
+  name: openchecker-test-main-ingress
   namespace: openchecker
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -25,16 +25,16 @@ metadata:
 spec:
   tls:
   - hosts:
-    - openchecker.mlops.pub
-    secretName: openchecker-mlops-pub-tls
+    - openchecker-test.mlops.pub
+    secretName: openchecker-test-mlops-pub-tls
   rules:
-  - host: openchecker.mlops.pub
+  - host: openchecker-test.mlops.pub
     http:
       paths:
       - path: /
         backend:
           service:
-            name: openchecker-main-service
+            name: openchecker-test-main-service
             port:
               number: 80
         pathType: Prefix

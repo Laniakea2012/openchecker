@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: openchecker-pv
+  name: openchecker-test-pv
   namespace: openchecker
 spec:
   capacity:
@@ -13,13 +13,13 @@ spec:
   storageClassName: nfs-client
   nfs:
     server: 192.168.0.110
-    path: /nfs_provisioner_data/openchecker-data/config
+    path: /nfs_provisioner_data/openchecker-test-data/config
 
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: openchecker-pvc
+  name: openchecker-test-pvc
   namespace: openchecker
   annotations: {}
 spec:

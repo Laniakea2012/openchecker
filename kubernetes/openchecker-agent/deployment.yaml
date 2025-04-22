@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: openchecker-agent
+  name: openchecker-test-agent
   namespace: openchecker
   labels:
-    app: openchecker-agent
+    app: openchecker-test-agent
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
-      app: openchecker-agent
+      app: openchecker-test-agent
   template:
     metadata:
       labels:
-        app: openchecker-agent
+        app: openchecker-test-agent
     spec:
       containers:
-      - name: openchecker-agent
-        image: guoqiangqi/openchecker:v0.21
+      - name: openchecker-test-agent
+        image: guoqiangqi/openchecker:v0.22
         imagePullPolicy: Always
         command: ["python", "-u", "openchecker/agent.py"]
 
@@ -27,4 +27,4 @@ spec:
       volumes:
       - name: config-volume
         persistentVolumeClaim:
-          claimName: openchecker-pvc
+          claimName: openchecker-test-pvc
