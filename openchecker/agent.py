@@ -16,10 +16,18 @@ from urllib.parse import urlparse
 from typing import Optional, Tuple, List, Dict, Any
 from dataclasses import dataclass
 from pathlib import Path
+import shlex
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s : %(message)s')
 
-config = read_config('config/config.ini')
+def load_config(config_path: Optional[str] = None) -> Dict:
+    if config_path is None:
+        config_path = os.getenv('CONFIG_PATH', 'config/config.ini')
+    
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        
+    return read_config(config_path)
 
 @dataclass
 class ProjectInfo:
@@ -50,12 +58,19 @@ class ProjectManager:
 
     def clone_if_not_exists(self) -> None:
         """Clone the project if it doesn't exist"""
-        if not self.project_path.exists():
-            subprocess.run(
-                ["git", "clone", "--depth=1", self.project_url],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
+        try:
+            if not self.project_path.exists():
+                result = subprocess.run(
+                    ["git", "clone", "--depth=1", self.project_url],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True
+                )
+                logging.info(f"Successfully cloned repository: {self.project_url}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to clone repository: {e.stderr}")
+            raise
 
     def cleanup(self) -> None:
         """Clean up project directory"""
@@ -64,10 +79,15 @@ class ProjectManager:
 
     def get_file_content(self, file_path: str) -> Optional[str]:
         """Get file content"""
-        full_path = self.project_path / file_path
-        if full_path.exists():
-            with open(full_path, 'r', encoding='utf-8') as f:
-                return f.read()
+        try:
+            full_path = self.project_path / file_path
+            if full_path.exists():
+                with open(full_path, 'r', encoding='utf-8') as f:
+                    return f.read()
+        except UnicodeDecodeError:
+            logging.error(f"Failed to decode file: {file_path}")
+        except Exception as e:
+            logging.error(f"Error reading file {file_path}: {e}")
         return None
 
     def find_files(self, patterns: List[str], search_dirs: List[str] = None) -> List[str]:
@@ -156,17 +176,30 @@ def dependency_checker_output_process(output):
 
     return result
 
-def shell_exec(shell_script, param=None):
-    if param != None:
-        process = subprocess.Popen(["/bin/bash", "-c", shell_script + " " + param], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
-    else:
-        process = subprocess.Popen([shell_script], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    shell_output, error = process.communicate()
-
-    if process.returncode == 0:
-        return shell_output, None
-    else:
-        return None, error
+def safe_shell_exec(command: str, args: Optional[List[str]] = None) -> Tuple[Optional[str], Optional[str]]:
+    try:
+        if args:
+            command = shlex.quote(command)
+            args = [shlex.quote(arg) for arg in args]
+            process = subprocess.Popen(
+                [command] + args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+        else:
+            process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                shell=True
+            )
+        stdout, stderr = process.communicate()
+        return stdout, stderr
+    except Exception as e:
+        logging.error(f"Error executing command: {e}")
+        return None, str(e)
 
 def request_url (url, payload):
     response = post_with_backoff(url=url, json=payload)
