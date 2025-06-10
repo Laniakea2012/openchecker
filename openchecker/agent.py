@@ -20,14 +20,7 @@ import shlex
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s : %(message)s')
 
-def load_config(config_path: Optional[str] = None) -> Dict:
-    if config_path is None:
-        config_path = os.getenv('CONFIG_PATH', 'config/config.ini')
-    
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        
-    return read_config(config_path)
+config = read_config()
 
 @dataclass
 class ProjectInfo:
@@ -780,7 +773,7 @@ def run_sonar_scanner(project: ProjectManager) -> Dict[str, Any]:
         return response.json()
         
     except Exception as e:
-        logging.error(f"Error running sonar scanner: {e}")
+        logging.error(f"Error running sonar scanner for project {project.project_url}: {e}")
         return {"error": str(e)}
 
 def run_dependency_checker(project: ProjectManager) -> Dict[str, Any]:
