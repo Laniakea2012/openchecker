@@ -256,6 +256,21 @@ def get_all_releases_with_assets(project_url):
         else:
             logging.error(f"Failed to get releases for repo: {project_url} \n Error: Not found")
             return [], "Not found"
+    elif "gitcode.com" in project_url:
+        access_token = config["Gitcode"]["access_key"]
+        url = f"https://api.gitcode.com/api/v5/repos/{owner_name}/{repo_name}/releases?access_token={access_token}"
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                releases = response.json()
+                return releases, None
+            else:
+                logging.error(f"Failed to get releases for repo: {project_url} \n Error: Not found")
+                return [], "Not found"
+        except Exception as e:
+            logging.error(f"Failed to get latest release for repo: {project_url} \n Error: {e}")
+            return [], f"failed to get releases for repo: {project_url}"
+
     else:
         logging.info(f"Failed to do releases check for repo: {project_url} \n Error: Not supported platform.")
         return [], "Not supported platform."
@@ -380,7 +395,9 @@ def _get_zipball_url(project_url, owner_name, repo_name, tag, gitee_access_token
             return f"https://gitee.com/api/v5/repos/{owner_name}/{repo_name}/zipball?access_token={gitee_access_token}&ref={tag}"
         else:
             return f"https://gitee.com/api/v5/repos/{owner_name}/{repo_name}/zipball?ref={tag}"
-    
+    elif "gitcode.com" in project_url:
+        # wait for gitcode api
+        return None
     else:
         return None
 
