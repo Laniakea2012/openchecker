@@ -64,7 +64,7 @@ RUN gpg --keyserver keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170311380
     apt-get update && \
     apt-get install -y openjdk-11-jdk && \
     curl -sL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs build-essential sbt ruby-licensee && \
+    apt-get install -y nodejs build-essential sbt ruby-licensee cloc && \
     npm install -g pnpm yarn bower
 
 # Install ohpm_cli_tool
@@ -78,17 +78,14 @@ RUN cd /opt && wget https://github.com/ossf/scorecard/releases/download/v5.2.1/s
     ln -s /opt/scorecard /usr/bin/scorecard && \
     rm scorecard_5.2.1_linux_amd64.tar.gz
 
-# Install cloc
-RUN apt install cloc
-
 COPY . .
 RUN chmod a+x scripts/entrypoint.sh && \
     pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt && \
     pip install --upgrade urllib3
 
 # Install criticality
-RUN pip install criticality_score 
-    && cp -f openchecker/criticality/run.py  /python3.9/site-packages/criticality_score/run.py
+RUN pip install criticality_score  \
+    && cp -f openchecker/criticality/run.py  /usr/local/lib/python3.9/site-packages/criticality_score/run.py
 
 
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]

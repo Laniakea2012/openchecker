@@ -1,4 +1,3 @@
-import random
 import subprocess
 from message_queue import consumer
 from helper import read_config
@@ -14,10 +13,16 @@ import zipfile
 import io
 import logging
 from urllib.parse import urlparse
+from constans import shell_script_handlers
+from typing import Any
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s : %(message)s')
 
-config = read_config('config/config.ini')
+
+file_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(file_dir)
+config_file = os.path.join(project_root, "config", "config.ini")
+config = read_config(config_file)
 
 def get_licenses_name(data):
     return next(
@@ -45,14 +50,7 @@ def ruby_licenses(data):
                 project_url = None
             # 如果找到了有效的 GitHub 地址，克隆仓库并调用 licensee
             if project_url:
-                shell_script=f"""
-                    project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                    if [ ! -e "$project_name" ]; then
-                        GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                    fi
-                    licensee detect "$project_name" --json
-                    rm -rf $project_name > /dev/null
-                """
+                shell_script = shell_script_handlers["license-detector"].format(project_url=project_url)
                 result, error = shell_exec(shell_script)
                 if error == None:
                     try:
@@ -196,7 +194,7 @@ def check_doc_content(project_url, type):
         logging.info("Unsupported type: {}".format(type))
         return [], None
 
-    build_doc_file = []
+    satisfied_doc_file = []
     for document in documents:
         with open(document, 'r') as file:
             markdown_text = file.read()
@@ -213,13 +211,13 @@ def check_doc_content(project_url, type):
 
             external_build_doc_link = "https://gitee.com/openharmony-tpc/docs/blob/master/OpenHarmony_har_usage.md"
             if do_link_include_check and external_build_doc_link.lower() in chunk.lower():
-                return build_doc_file, None
+                return satisfied_doc_file, None
 
             result = completion_with_backoff(messages=messages, temperature=0.2)
             if result == "YES":
-                build_doc_file.append(document)
-                return build_doc_file, None
-    return build_doc_file, None
+                satisfied_doc_file.append(document)
+                return satisfied_doc_file, None
+    return satisfied_doc_file, None
 
 def get_all_releases_with_assets(project_url):
     """
@@ -228,11 +226,6 @@ def get_all_releases_with_assets(project_url):
         list: 每个元素为release的dict，包含tag、name、assets等字段。
         str or None: 错误信息，无错为None。
     """
-    import logging
-    import re
-    import os
-    import requests
-    from ghapi.all import GhApi, paged
 
     owner_name = re.match(r"https://(?:github|gitee|gitcode).com/([^/]+)/", project_url).group(1)
     repo_name = re.sub(r'\.git$', '', os.path.basename(project_url))
@@ -247,9 +240,19 @@ def get_all_releases_with_assets(project_url):
         except Exception as e:
             logging.error(f"Failed to get releases for repo: {project_url} \n Error: {e}")
             return [], f"failed to get releases for repo: {project_url}"
-    elif "gitee.com" in project_url:
-        url = f"https://gitee.com/api/v5/repos/{owner_name}/{repo_name}/releases"
-        response = requests.get(url)
+
+    elif "gitee.com" in project_url or "gitcode.com" in project_url:
+        if "gitee.com" in project_url:
+            url = f"https://gitee.com/api/v5/repos/{owner_name}/{repo_name}/releases"
+        else:
+            access_token = config.get("GitCode", {}).get("access_key", "")
+            url = f"https://api.gitcode.com/api/v5/repos/{owner_name}/{repo_name}/releases?access_token={access_token}"
+
+        headers = {
+            'Accept': 'application/json'
+        }
+
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             releases = response.json()
             return releases, None
@@ -270,7 +273,6 @@ def get_all_releases_with_assets(project_url):
         except Exception as e:
             logging.error(f"Failed to get latest release for repo: {project_url} \n Error: {e}")
             return [], f"failed to get releases for repo: {project_url}"
-
     else:
         logging.info(f"Failed to do releases check for repo: {project_url} \n Error: Not supported platform.")
         return [], "Not supported platform."
@@ -318,8 +320,6 @@ def check_release_contents(project_url, type="notes", check_repo=False):
         
         owner_name = owner_match.group(1)
         repo_name = re.sub(r'\.git$', '', os.path.basename(project_url))
-        
-        gitee_access_token = config.get("Gitee", {}).get("access_key", "") if "gitee.com" in project_url else ""
 
         all_releases, error = get_all_releases_with_assets(project_url)
         if error:
@@ -338,7 +338,7 @@ def check_release_contents(project_url, type="notes", check_repo=False):
             tag = rel.get("tag_name", "")
             release_name = rel.get("name", tag)
             
-            zip_url = _get_zipball_url(project_url, owner_name, repo_name, tag, gitee_access_token)
+            zip_url = _get_zipball_url(project_url, owner_name, repo_name, tag)
             if not zip_url:
                 results.append(_create_result_entry(tag, release_name, False, [], "No zipball_url"))
                 continue
@@ -373,7 +373,7 @@ def _get_file_patterns(content_type):
         return []
 
 
-def _get_zipball_url(project_url, owner_name, repo_name, tag, gitee_access_token):
+def _get_zipball_url(project_url, owner_name, repo_name, tag):
     """
     获取zipball下载URL。
     
@@ -382,7 +382,6 @@ def _get_zipball_url(project_url, owner_name, repo_name, tag, gitee_access_token
         owner_name (str): 所有者名称
         repo_name (str): 仓库名称
         tag (str): 标签名称
-        gitee_access_token (str): Gitee访问令牌
         
     Returns:
         str: zipball URL，如果获取失败返回None
@@ -510,564 +509,538 @@ def check_signed_release(project_url):
     return {"is_released": bool(results), "signed_files": results}, None
 
 def callback_func(ch, method, properties, body):
-
+    """
+    消息队列回调函数，处理项目检查任务
+    
+    Args:
+        ch: 消息通道
+        method: 消息方法
+        properties: 消息属性
+        body: 消息体
+    """
     logging.info(f"callback func called at {datetime.now()}")
 
-    message = json.loads(body.decode('utf-8'))
-    command_list = message.get('command_list')
-    project_url = message.get('project_url')
-    commit_hash = message.get("commit_hash")
-    callback_url = message.get('callback_url')
-    task_metadata = message.get('task_metadata')
-    version_number = task_metadata.get("version_number", "None")
-    logging.info(project_url)
+    try:
+        message = json.loads(body.decode('utf-8'))
+        command_list = message.get('command_list', [])
+        project_url = message.get('project_url')
+        commit_hash = message.get("commit_hash")
+        callback_url = message.get('callback_url')
+        task_metadata = message.get('task_metadata', {})
+        version_number = task_metadata.get("version_number", "None")
+        
+        logging.info(f"Processing project: {project_url}")
 
-    res_payload = {
-        "command_list": command_list,
-        "project_url": project_url,
-        "task_metadata": task_metadata,
-        "scan_results": {
+        if not project_url:
+            logging.error("Project URL is required")
+            return
+
+        repos_dir = config.get("OpenCheck", "repos_dir", fallback="/tmp/repos")
+        logging.info(f"Repos directory: {repos_dir}")
+
+        if not os.path.exists(repos_dir):
+            os.makedirs(repos_dir, exist_ok=True)
+            logging.info(f"Created repos directory: {repos_dir}")
+
+        original_cwd = os.getcwd()
+
+        os.chdir(repos_dir)
+        logging.info(f"Changed working directory to: {os.getcwd()}")
+
+        res_payload = {
+            "command_list": command_list,
+            "project_url": project_url,
+            "task_metadata": task_metadata,
+            "scan_results": {}
         }
-    }
 
-    # download source code of the project
-    shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone {project_url}
-                fi
+        if not _download_project_source(project_url, version_number):
+            _handle_error_and_nack(ch, method, body, "Failed to download project source")
+            return
 
-                cd "$project_name"
+        _generate_lock_files(project_url)
 
-                if [ {version_number} != "None" ]; then
-                    # 检查版本号是否在git仓库的tag中
-                    if git tag | grep -q "^$version_number$"; then
-                        # 切换到对应的tag
-                        git checkout "$version_number"
-                        if [ $? -eq 0 ]; then
-                            echo "成功切换到标签 $version_number"
-                        else
-                            echo "切换到标签 $version_number 失败"
-                        fi
-                    fi
-                fi
-            """
+        _execute_commands(command_list, project_url, res_payload, commit_hash)
 
-    result, error = shell_exec(shell_script)
 
-    if error == None:
-        logging.info("download source code done: {}".format(project_url))
-    else:
-        logging.info("download source code failed: {}, error: {}".format(project_url, error))
-        logging.info("put messages to dead letters: {}".format(body))
-        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
-        return
+        _cleanup_project_source(project_url)
 
-    ## Generate the lock files, which would be used by the osv-scanner and ort tools.
-    shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ -e "$project_name/package.json" ] && [ ! -e "$project_name/package-lock.json" ]; then
-                    cd $project_name && npm install && rm -fr node_modules > /dev/null
-                    echo "Generate lock files for $project_name with command npm."
-                fi
-                if [ -e "$project_name/oh-package.json5" ] && [ ! -e "$project_name/oh-package-lock.json5" ]; then
-                    cd $project_name && ohpm install && rm -fr oh_modules > /dev/null
-                    echo "Generate lock files for $project_name with command ohpm."
-                fi
-            """
+        os.chdir(original_cwd)
+        logging.info(f"Restored working directory to: {os.getcwd()}")
 
-    result, error = shell_exec(shell_script)
+        _send_results(callback_url, res_payload)
+        
 
-    if error == None:
-        logging.info("Lock files generation job done: {}".format(result.decode('utf-8') if bool(result) else "No lock files generated."))
-    else:
-        logging.error("Lock files generation job failed: {}, error: {}".format(project_url, error))
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+        
+    except Exception as e:
+        logging.error(f"Error processing message: {e}")
+
+        try:
+            os.chdir(original_cwd)
+            logging.info(f"Restored working directory to: {os.getcwd()} after exception")
+        except:
+            pass
+
+        _handle_error_and_nack(ch, method, body, str(e))
+
+
+def _download_project_source(project_url: str, version_number: str) -> bool:
+    """
+    下载项目源码
+    
+    Args:
+        project_url: 项目URL
+        version_number: 版本号
+        
+    Returns:
+        bool: 是否成功
+    """
+    try:
+        shell_script = shell_script_handlers["download-checkout"].format(
+            project_url=project_url, 
+            version_number=version_number
+        )
+        result, error = shell_exec(shell_script)
+        
+        if error is None:
+            logging.info(f"Download source code done: {project_url}")
+            return True
+        else:
+            logging.error(f"Download source code failed: {project_url}, error: {error}")
+            return False
+            
+    except Exception as e:
+        logging.error(f"Exception during source download: {e}")
+        return False
+
+
+def _generate_lock_files(project_url: str) -> None:
+    """
+    生成锁文件
+    
+    Args:
+        project_url: 项目URL
+    """
+    try:
+        shell_script = shell_script_handlers["generate-lock_files"].format(project_url=project_url)
+        result, error = shell_exec(shell_script)
+        
+        if error is None:
+            logging.info(f"Lock files generation done: {project_url}")
+        else:
+            logging.error(f"Lock files generation failed: {project_url}, error: {error}")
+            
+    except Exception as e:
+        logging.error(f"Exception during lock files generation: {e}")
+
+
+def _execute_commands(command_list: list, project_url: str, res_payload: dict, commit_hash: str) -> None:
+    """
+    执行命令列表
+    
+    Args:
+        command_list: 命令列表
+        project_url: 项目URL
+        res_payload: 响应载荷
+        commit_hash: 提交哈希
+    """
 
     command_handlers = {
-        'criticality-score': run_criticality_score,
-        'scorecard-score': run_scorecard_cli,
-        'code-count': get_code_count,
-        'package-info': get_package_info,
-        'ohpm-info': get_ohpm_info
+            'criticality-score': run_criticality_score,
+            'scorecard-score': run_scorecard_cli,
+            'code-count': get_code_count,
+            'package-info': get_package_info,
+            'ohpm-info': get_ohpm_info
         }
 
     for command in command_list:
-        if command == 'osv-scanner':
-
-            shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                fi
-
-                # Rename oh-package-lock.json5 to package-lock.json make it readable by osv-scanner.
-                if [ -f "$project_name/oh-package-lock.json5" ] && [! -f "$project_name/package-lock.json" ]; then
-                    mv $project_name/oh-package-lock.json5 $project_name/package-lock.json  > /dev/null
-                    rename_flag = 1
-                fi
-
-                # Outputs the results as a JSON object to stdout, with all other output being directed to stderr
-                # - this makes it safe to redirect the output to a file.
-                # shell_exec function return (None, error) when process.returncode is not 0, so we redirect output to a file and cat.
-                osv-scanner --format json -r $project_name > $project_name/result.json
-                cat $project_name/result.json
-                # rm -rf $project_name > /dev/null
-
-                if [ -v rename_flag ]; then
-                    mv $project_name/package-lock.json $project_name/oh-package-lock.json5  > /dev/null
-                fi
-            """
-
-            result, error = shell_exec(shell_script)
-
-            # When osv-scanner tool specify the '--format json' option, only the scan results are output to the standard output.
-            # All other information is redirected to the standard error output;
-            # Hence, error values are not checked here.
-            logging.info("osv-scanner job done: {}".format(project_url))
-            osv_result = json.loads(result.decode('utf-8')) if bool(result) else {}
-            res_payload["scan_results"]["osv-scanner"] = osv_result
-
-        elif command == 'scancode':
-
-            shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                fi
-                scancode -lc --json-pp scan_result.json $project_name --license-score 90 -n 4 > /dev/null
-                cat scan_result.json
-                rm -rf scan_result.json > /dev/null
-                # rm -rf $project_name scan_result.json > /dev/null
-            """
-
-            result, error = shell_exec(shell_script)
-
-            if error == None:
-                logging.info("scancode job done: {}".format(project_url))
-                scancode_result = json.loads(result.decode('utf-8')) if bool(result) else {}
-                res_payload["scan_results"]["scancode"] = scancode_result
+        try:
+            if command == 'binary-checker':
+                _handle_binary_checker(project_url, res_payload)
+            elif command == 'release-checker':
+                _handle_release_checker(project_url, res_payload)
+            elif command == 'url-checker':
+                _handle_url_checker(project_url, res_payload)
+            elif command == 'sonar-scanner':
+                _handle_sonar_scanner(project_url, res_payload)
+            elif command in ['osv-scanner', 'scancode', 'dependency-checker', 'readme-checker', 
+                           'maintainers-checker', 'languages-detector', 'oat-scanner', 'license-detector']:
+                _handle_shell_script_command(command, project_url, res_payload)
+            elif command == 'api-doc-checker':
+                _handle_general_doc_checker(project_url, res_payload, "api-doc")
+            elif command == 'build-doc-checker':
+                _handle_general_doc_checker(project_url, res_payload, "build-doc")
+            elif command == 'readme-opensource-checker':
+                _handle_readme_opensource_checker(project_url, res_payload)
+            elif command == 'changed-files-since-commit-detector':
+                _handle_changed_files_detector(project_url, res_payload, commit_hash)
+            elif command in command_handlers:
+                _handle_standard_command(command, project_url, res_payload, command_handlers)
             else:
-                logging.error("scancode job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["scancode"] = {"error": json.dumps(error.decode("utf-8"))}
+                logging.warning(f"Unknown command: {command}")
+                
+        except Exception as e:
+            logging.error(f"Error executing command {command}: {e}")
+            res_payload["scan_results"][command] = {"error": str(e)}
 
-        elif command == 'binary-checker':
-            result, error = shell_exec("./scripts/binary_checker.sh", project_url)
 
-            if error == None:
-                logging.info("binary-checker job done: {}".format(project_url))
-                result = result.decode('utf-8') if bool(result) else ""
-                data_list = result.split('\n')
-                binary_file_list = []
-                binary_archive_list = []
-                for data in data_list[:-1]:
-                    if "Binary file found:" in data:
-                        binary_file_list.append(data.split(": ")[1])
-                    elif "Binary archive found:" in data:
-                        binary_archive_list.append(data.split(": ")[1])
-                    else:
-                        pass
-                binary_result = {"binary_file_list": binary_file_list, "binary_archive_list": binary_archive_list}
-                res_payload["scan_results"]["binary-checker"] = binary_result
-
-            else:
-                logging.error("binary-checker job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["binary-checker"] = {"error": json.dumps(error.decode("utf-8"))}
-
-        elif command == 'release-checker':
-
-            for task in ["notes", "sbom"]:
-                content_check_result, error = check_release_contents(project_url, task)
-
-                if error == None:
-                    logging.info("release-checker job done: {}".format(project_url))
-                    res_payload["scan_results"]["release-checker"][task] = content_check_result
-                else:
-                    logging.error("release-checker job failed: {}, error: {}".format(project_url, error))
-                    res_payload["scan_results"]["release-checker"][task] = {"error": error}
-
-            signed_release_result, error = check_signed_release(project_url)
-            if error == None:
-                logging.info("signed-release-checker job done: {}".format(project_url))
-                res_payload["scan_results"]["release-checker"]["signed-release-checker"] = signed_release_result
-            else:
-                logging.error("signed-release-checker job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["release-checker"]["signed-release-checker"] = {"error": error}
-
-        elif command == 'url-checker':
-            from urllib import request
-            try:
-                with request.urlopen(project_url) as file:
-                    if file.status == 200 and file.reason == "OK":
-                        logging.info("url-checker job done: {}".format(project_url))
-                        url_result = {"url": project_url, "status": "pass", "error": "null"}
-                    else:
-                        logging.error("url-checker job failed: {}".format(project_url))
-                        url_result = {"url": project_url, "status": "fail", "error": file.reason}
-            except Exception as e:
-                logging.error("gignature-checker job failed: {}, error: {}".format(project_url, e))
-                url_result = {"error": e}
-            res_payload["scan_results"]["url-checker"] = url_result
-
-        elif command == 'sonar-scanner':
-
-            pattern = r'https?://(?:www\.)?(github\.com|gitee\.com|gitcode\.com)/([^/]+)/([^/]+)\.git'
-            match = re.match(pattern, project_url)
-            if match:
-                platform, organization, project = match.groups()
-            else:
-                platform, organization, project = "other", "default", "default"
-            sonar_project_name = platform + "_" + organization + "_" + project
-
-            sonar_config = config["SonarQube"]
-
-            sonar_search_procet_api = f"http://{sonar_config['host']}:{sonar_config['port']}/api/projects/search"
-
-            data = {"projects": sonar_project_name}
-            auth = (sonar_config["username"], sonar_config["password"])
-            is_exit = False
-
-            try:
-                response = requests.get(sonar_search_procet_api, auth=auth, params={"projects": sonar_project_name})
-                if response.status_code == 200:
-                    logging.info("Call sonarqube projects search api success: 200")
-                    res = json.loads(response.text)
-                    is_exit = True if res["paging"]["total"] > 0 else False
-                else:
-                    logging.error(f"Call sonarqube projects search api failed with status code: {response.status_code}")
-            except requests.exceptions.RequestException as e:
-                logging.error(f"Call sonarqube projects search api failed with error: {e}")
-
-            if not is_exit:
-                sonar_create_procet_api = f"http://{sonar_config['host']}:{sonar_config['port']}/api/projects/create"
-                data = {"project": sonar_project_name, "name": sonar_project_name}
-
-                try:
-                    response = requests.post(sonar_create_procet_api, auth=auth, data=data)
-                    if response.status_code == 200:
-                        logging.info("Call sonarqube projects create api success: 200")
-                    else:
-                        logging.error(f"Call sonarqube projects create api failed with status code: {response.status_code}")
-                except requests.exceptions.RequestException as e:
-                    logging.error(f"Call sonarqube projects create api failed with error: {e}")
-
-            shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                fi
-                cp -r $project_name ~/ && cd ~
-                sonar-scanner \
-                    -Dsonar.projectKey={sonar_project_name} \
-                    -Dsonar.sources=$project_name \
-                    -Dsonar.host.url=http://{sonar_config['host']}:{sonar_config['port']} \
-                    -Dsonar.token={sonar_config['token']} \
-                    -Dsonar.exclusions=**/*.java
-                rm -rf $project_name > /dev/null
-            """
-
-            result, error = shell_exec(shell_script)
-
-            if error == None:
-                logging.info("sonar-scanner finish scanning project: {}, report querying...".format(project_url))
-
-                sonar_query_measures_api = f"http://{sonar_config['host']}:{sonar_config['port']}/api/measures/component"
-
-                try:
-                    # TODO: optimize this, waiting for sonarqube data processing
-                    time.sleep(60)
-                    response = requests.get(sonar_query_measures_api, auth=auth, params={"component": sonar_project_name, "metricKeys": "coverage,complexity,duplicated_lines_density,lines"})
-                    if response.status_code == 200:
-                        logging.info("Querying sonar-scanner report success: 200")
-                        sonar_result = json.loads(response.text)
-                        res_payload["scan_results"]["sonar-scanner"] = sonar_result
-                    else:
-                        logging.error(f"Querying sonar-scanner report failed with status code: {response.status_code}")
-                except requests.exceptions.RequestException as e:
-                    logging.error(f"Querying sonar-scanner report failed with error: {e}")
-
-                logging.info("sonar-scanner job done: {}".format(project_url))
-            else:
-                logging.error("sonar-scanner job failed: {}, error: {}".format(project_url, error))
-
-        elif command == 'dependency-checker':
-
-            shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                fi
-                ort -P ort.analyzer.allowDynamicVersions=true analyze -i $project_name -o $project_name -f JSON > /dev/null
-                cat $project_name/analyzer-result.json
-                # rm -rf $project_name > /dev/null
-            """
-            result, error = shell_exec(shell_script)
-
-            if error == None:
-                logging.info("dependency-checker job done: {}".format(project_url))
-                res_payload["scan_results"]["dependency-checker"] = dependency_checker_output_process(result)
-            else:
-                logging.error("dependency-checker job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["dependency-checker"] = {"error": json.dumps(error.decode("utf-8"))}
-
-        elif command == 'readme-checker':
-
-            shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                fi
-                find "$project_name" -type f \( -name "README*" -o -name ".github/README*" -o -name "docs/README*" \) -print
-            """
-
-            result, error = shell_exec(shell_script)
-
-            if error == None:
-                logging.info("readme-checker job done: {}".format(project_url))
-                res_payload["scan_results"]["readme-checker"] = {"readme_file": result.decode('utf-8').split('\n')[:-1]} if bool(result) else {}
-            else:
-                logging.error("readme-checker job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["readme-checker"] = {"error": json.dumps(error.decode("utf-8"))}
-
-        elif command == 'maintainers-checker':
-
-            shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                fi
-                find "$project_name" -type f \( -iname "MAINTAINERS*" -o -iname "COMMITTERS*" -o -iname "OWNERS*" -o -iname "CODEOWNERS*" \) -print
-            """
-
-            result, error = shell_exec(shell_script)
-
-            if error == None:
-                logging.info("maintainers-checker job done: {}".format(project_url))
-                res_payload["scan_results"]["maintainers-checker"] = {"maintainers_file": result.decode('utf-8').split('\n')[:-1]} if bool(result) else {}
-            else:
-                logging.error("maintainers-checker job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["maintainers-checker"] = {"error": json.dumps(error.decode("utf-8"))}
-
-        elif command == 'readme-opensource-checker':
-            result, error  = check_readme_opensource(project_url)
-            if error == None:
-                logging.info("readme-opensource-checker job done: {}".format(project_url))
-                res_payload["scan_results"]["readme-opensource-checker"] = {"readme-opensource-checker": result} if bool(result) else {}
-            else:
-                logging.error("readme-opensource-checker job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["readme-opensource-checker"] = {"error":error}
-
-        elif command == 'build-doc-checker':
-            result, error  = check_doc_content(project_url, "build-doc")
-            if error == None:
-                logging.info("build-doc-checker job done: {}".format(project_url))
-                res_payload["scan_results"]["build-doc-checker"] = {"build-doc-checker": result} if bool(result) else {}
-            else:
-                logging.error("build-doc-checker job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["build-doc-checker"] = {"error":error}
-
-        elif command == 'api-doc-checker':
-            result, error  = check_doc_content(project_url, "api-doc")
-            if error == None:
-                logging.info("api-doc-checker job done: {}".format(project_url))
-                res_payload["scan_results"]["api-doc-checker"] = {"api-doc-checker": result} if bool(result) else {}
-            else:
-                logging.error("api-doc-checker job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["api-doc-checker"] = {"error":error}
-
-        elif command == 'sbom-checker':
-            result = check_sbom_for_project(project_url)
-            if result.get("status") == "success":
-                logging.info("sbom-checker job done: {}".format(project_url))
-                res_payload["scan_results"]["sbom-checker"] = result
-            else:
-                logging.error("sbom-checker job failed: {}, error: {}".format(project_url, result.get("error", "Unknown error")))
-                res_payload["scan_results"]["sbom-checker"] = {"error": result.get("error", "Unknown error")}
-
-        elif command == 'languages-detector':
-
-            shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                fi
-                github-linguist $project_name --breakdown --json
-            """
-
-            result, error = shell_exec(shell_script)
-
-            if error == None:
-                logging.info("languages-detector job done: {}".format(project_url))
-                res_payload["scan_results"]["languages-detector"] = json.dumps(result.decode("utf-8")) if bool(result) else {}
-            else:
-                logging.error("languages-detector job failed: {}, error: {}".format(project_url, error))
-                res_payload["scan_results"]["languages-detector"] = {"error": json.dumps(error.decode("utf-8"))}
-
-        elif command == 'changed-files-since-commit-detector':
-            if commit_hash is None:
-                print("Fail to get commit hash from message body!")
-                continue
-
-            context_path = os.getcwd()
-            try:
-                repository_path = os.path.join(context_path, os.path.splitext(os.path.basename(urlparse(project_url).path))[0])
-                os.chdir(repository_path)
-                print(f"change os path to git repository directory: {repository_path}")
-            except OSError as e:
-                print(f"failed to change os path to git repository directory: {e}")
-
-            # type can be: [(A|C|D|M|R|T|U|X|B)…​[*]]
-            # Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R),
-            # have their type (i.e. regular file, symlink, submodule, …​) changed (T),
-            # are Unmerged (U), are Unknown (X), or have had their pairing Broken (B).
-            # Reference to git official docs:
-            # https://git-scm.com/docs/git-diff#Documentation/git-diff.txt---diff-filterACDMRTUXB82308203
-            def get_diff_files(type="ACDMRTUXB"):
-                try:
-                    result = subprocess.check_output(
-                       ["git", "diff", "--name-only", f"--diff-filter={type}", f"{commit_hash}..HEAD"],
-                        stderr=subprocess.STDOUT,
-                        text=True
-                    )
-                    return result.strip().split("\n") if result else []
-                except subprocess.CalledProcessError as e:
-                    print(f"failed to get {type} files: {e.output}")
-                    return []
-
-            changed_files = get_diff_files()
-            new_files = get_diff_files("A")
-            rename_files = get_diff_files("R")
-            deleted_files = get_diff_files("D")
-            modified_files = get_diff_files("M")
-
-            os.chdir(context_path)
-
-            res_payload["scan_results"]["changed-files-since-commit-detector"] = {
-                "changed_files": changed_files,
-                "new_files": new_files,
-                "rename_files": rename_files,
-                "deleted_files": deleted_files,
-                "modified_files": modified_files
-                }
-
-        elif command == 'oat-scanner':
-            # https://gitee.com/openharmony-sig/tools_oat
-            shell_script = f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ ! -e "$project_name" ]; then
-                    GIT_ASKPASS=/bin/true git clone --depth=1 {project_url} > /dev/null
-                fi                
-                if [ ! -f "$project_name/OAT.xml" ]; then
-                    echo "OAT.xml not found in the project root directory."
-                    exit 1   
-                fi
-                java -jar ohos_ossaudittool-2.0.0.jar -mode s -s $project_name   -r $project_name/oat_out -n $project_name > /dev/null            
-                report_file="$project_name/oat_out/single/PlainReport_$project_name.txt"
-                if [ -f "$report_file" ]; then                    
-                    cat "$report_file"                                    
-                fi                        
-            """
-            result, error = shell_exec(shell_script)
+def _handle_shell_script_command(command: str, project_url: str, res_payload: dict) -> None:
+    """
+    处理shell脚本命令的通用函数
+    
+    Args:
+        command: 命令名称
+        project_url: 项目URL
+        res_payload: 响应载荷
+    """
+    try:
+        if command not in shell_script_handlers:
+            logging.error(f"No shell script handler found for command: {command}")
+            return
+        
+        shell_script = shell_script_handlers[command].format(project_url=project_url)
+        result, error = shell_exec(shell_script)
+        
+        if error is None:
+            logging.info(f"{command} job done: {project_url}")
             
-            if error == None:
-                logging.info("The oat scan was successful. Analyzing the report.: {}".format(project_url))
-            else:
-                logging.error("oat-scanner job failed: {}, error: {}".format(project_url, error))
-
-            def parse_oat_txt_to_json(txt):
-                try:
-                    de_str = txt.decode('unicode_escape')
-                    result = {}
-                    lines = de_str.splitlines()
-                    current_section = None
-                    pattern = r"Name:\s*(.+?)\s*Content:\s*(.+?)\s*Line:\s*(\d+)\s*Project:\s*(.+?)\s*File:\s*(.+)"
-
-                    for line in lines:
-                        line = line.strip()
-                        if not line:
-                            continue
-                        total_count_match = re.search(r"^(.*) Total Count:\s*(\d+)", line, re.MULTILINE)
-                        category_name = total_count_match.group(1).strip() if total_count_match else "Unknown"
-
-                        if 'Total Count' in line:
-                            current_section = category_name
-                            total_count = int(line.split(":")[1].strip())
-                            result[current_section] = {"total_count": total_count, "details": []}
-                        elif line.startswith("Name:"):
-                            matches = re.finditer(pattern, line)
-                            for match in matches:
-                                entry = {
-                                    "name": match.group(1).strip(),
-                                    "content": match.group(2).strip(),
-                                    "line": int(match.group(3).strip()),
-                                    "project": match.group(4).strip(),
-                                    "file": match.group(5).strip(),
-                                }
-                            if current_section and "details" in result[current_section]:
-                                result[current_section]["details"].append(entry)
-                    return result
-                except Exception as e:
-                    logging.error("parse_oat_txt error: {}".format(e))
-                    return e
-
-            res_payload["scan_results"]["oat-scanner"] = {}
-            if not result:
-                logging.info("{} OAT.xml not found".format(project_url))
-                # OAT.xml not found status_code: 404, success code:200, error code:500
-                res_payload["scan_results"]["oat-scanner"] = {
-                    "status_code": 404,
-                    "error": "OAT.xml not found"
-                }
-            else:
-                parse_res = parse_oat_txt_to_json(result)
-                if error is None:
-                    logging.info("oat-scanner job done: {}".format(project_url))
-                    res_payload["scan_results"]["oat-scanner"] = parse_res
-                    res_payload["scan_results"]["oat-scanner"]["status_code"] = 200
-                else:
-                    logging.error("oat-scanner job failed: {}, error: {}".format(project_url, error))
-                    res_payload["scan_results"]["oat-scanner"] = {
-                        "status_code": 500,
-                        "error": json.dumps(error.decode("utf-8"))
-                    }
-        elif command in command_handlers:
-            handler = command_handlers[command]
-            result, error = handler(project_url)
-            if error is None:
-                logging.info(f"{command} job done: {project_url}")
-                res_payload["scan_results"][command] = result
-            else:
-                logging.error(f"{command} job failed: {project_url}, error: {error}")
-                res_payload["scan_results"][command] = {"error": error}
+            processed_result = _process_command_result(command, result)
+            res_payload["scan_results"][command] = processed_result
         else:
-            logging.info(f"Unknown command: {command}")
+            logging.error(f"{command} job failed: {project_url}, error: {error}")
+            res_payload["scan_results"][command] = {"error": error.decode("utf-8")}
+            
+    except Exception as e:
+        logging.error(f"{command} job failed: {project_url}, error: {e}")
+        res_payload["scan_results"][command] = {"error": str(e)}
 
-    # remove source code of the project
-    shell_script=f"""
-                project_name=$(basename {project_url} | sed 's/\.git$//') > /dev/null
-                if [ -e "$project_name" ]; then
-                    rm -rf $project_name > /dev/null
-                fi
-            """
 
-    result, error = shell_exec(shell_script)
+def _process_command_result(command: str, result) -> Any:
+    """
+    根据命令类型处理结果
+    
+    Args:
+        command: 命令名称
+        result: 原始结果
+        
+    Returns:
+        处理后的结果
+    """
+    if not result:
+        return {}
+    
+    result_str = result.decode('utf-8')
+    
+    json_commands = ['osv-scanner', 'scancode', 'languages-detector']
+    if command in json_commands:
+        try:
+            return json.loads(result_str)
+        except json.JSONDecodeError as e:
+            logging.warning(f"Failed to parse JSON for {command}: {e}")
+            return {"raw_output": result_str}
+    
+    if command == 'dependency-checker':
+        return dependency_checker_output_process(result)
 
-    if error == None:
-        logging.info("remove source code done: {}".format(project_url))
+    elif command == 'oat-scanner':
+        return parse_oat_txt_to_json(result_str)
+    
+    return result_str
+
+
+def _handle_binary_checker(project_url: str, res_payload: dict) -> None:
+    """处理二进制检查器"""
+    # file_dir = os.path.dirname(os.path.abspath(__file__))
+    # project_root = os.path.dirname(file_dir)
+    binary_checker_script = os.path.join(project_root, "scripts", "binary_checker.sh")
+
+    result, error = shell_exec(binary_checker_script, project_url)
+    if error is None:
+        logging.info(f"binary-checker job done: {project_url}")
+        # 处理二进制检查器的特殊输出格式
+        result_str = result.decode('utf-8') if result else ""
+        data_list = result_str.split('\n')
+        binary_file_list = []
+        binary_archive_list = []
+        for data in data_list[:-1]:
+            if "Binary file found:" in data:
+                binary_file_list.append(data.split(": ")[1])
+            elif "Binary archive found:" in data:
+                binary_archive_list.append(data.split(": ")[1])
+        binary_result = {"binary_file_list": binary_file_list, "binary_archive_list": binary_archive_list}
+        res_payload["scan_results"]["binary-checker"] = binary_result
     else:
-        logging.error("remove source code failed: {}, error: {}".format(project_url, error))
+        logging.error(f"binary-checker job failed: {project_url}, error: {error}")
+        res_payload["scan_results"]["binary-checker"] = {"error": error.decode("utf-8")}
 
-    if callback_url != None and callback_url != "":
+
+def _handle_release_checker(project_url: str, res_payload: dict) -> None:
+    """处理发布检查器"""
+    res_payload["scan_results"]["release-checker"] = {}
+    
+    # 检查发布内容（notes和sbom）
+    for task in ["notes", "sbom"]:
+        content_check_result, error = check_release_contents(project_url, task)
+        if error is None:
+            logging.info(f"release-checker {task} job done: {project_url}")
+            res_payload["scan_results"]["release-checker"][task] = content_check_result
+        else:
+            logging.error(f"release-checker {task} job failed: {project_url}, error: {error}")
+            res_payload["scan_results"]["release-checker"][task] = {"error": error}
+
+    # 检查签名发布
+    signed_release_result, error = check_signed_release(project_url)
+    if error is None:
+        logging.info(f"signed-release-checker job done: {project_url}")
+        res_payload["scan_results"]["release-checker"]["signed-release-checker"] = signed_release_result
+    else:
+        logging.error(f"signed-release-checker job failed: {project_url}, error: {error}")
+        res_payload["scan_results"]["release-checker"]["signed-release-checker"] = {"error": error}
+
+
+def _handle_url_checker(project_url: str, res_payload: dict) -> None:
+    """处理URL检查器"""
+    try:
+        response = requests.get(project_url, timeout=10)
+        res_payload["scan_results"]["url-checker"] = {
+            "status_code": response.status_code,
+            "is_accessible": response.status_code == 200
+        }
+        logging.info(f"url-checker job done: {project_url}")
+    except Exception as e:
+        logging.error(f"url-checker job failed: {project_url}, error: {e}")
+        res_payload["scan_results"]["url-checker"] = {"error": str(e)}
+
+
+def _handle_sonar_scanner(project_url: str, res_payload: dict) -> None:
+    """处理SonarQube扫描器"""
+    try:
+        pattern = r'https?://(?:www\.)?(github\.com|gitee\.com|gitcode\.com)/([^/]+)/([^/]+)\.git'
+        match = re.match(pattern, project_url)
+        if match:
+            platform, organization, project = match.groups()
+        else:
+            platform, organization, project = "other", "default", "default"
+        
+        sonar_project_name = f"{platform}_{organization}_{project}"
+        sonar_config = config.get("SonarQube", {})
+        
+        if not _check_sonar_project_exists(sonar_project_name, sonar_config):
+            _create_sonar_project(sonar_project_name, sonar_config)
+        
+        shell_script = shell_script_handlers["sonar-scanner"].format(
+            project_url=project_url, 
+            sonar_project_name=sonar_project_name, 
+            sonar_config=sonar_config
+        )
+        result, error = shell_exec(shell_script)
+        
+        if error is None:
+            logging.info(f"sonar-scanner finish scanning project: {project_url}, report querying...")
+            sonar_result = _query_sonar_measures(sonar_project_name, sonar_config)
+            res_payload["scan_results"]["sonar-scanner"] = sonar_result
+            
+            logging.info(f"sonar-scanner job done: {project_url}")
+        else:
+            logging.error(f"sonar-scanner job failed: {project_url}, error: {error}")
+            res_payload["scan_results"]["sonar-scanner"] = {"error": error.decode("utf-8")}
+            
+    except Exception as e:
+        logging.error(f"sonar-scanner job failed: {project_url}, error: {e}")
+        res_payload["scan_results"]["sonar-scanner"] = {"error": str(e)}
+
+
+def _check_sonar_project_exists(project_name: str, sonar_config: dict) -> bool:
+    """
+    检查SonarQube项目是否已存在
+    
+    Args:
+        project_name: 项目名称
+        sonar_config: SonarQube配置
+        
+    Returns:
+        bool: 项目是否存在
+    """
+    try:
+        search_api_url = f"http://{sonar_config['host']}:{sonar_config['port']}/api/projects/search"
+        auth = (sonar_config.get("username"), sonar_config.get("password"))
+        
+        response = requests.get(
+            search_api_url, 
+            auth=auth, 
+            params={"projects": project_name},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            logging.info("Call sonarqube projects search api success: 200")
+            result = json.loads(response.text)
+            exists = result["paging"]["total"] > 0
+            if exists:
+                logging.info(f"SonarQube project {project_name} already exists")
+            return exists
+        else:
+            logging.error(f"Call sonarqube projects search api failed with status code: {response.status_code}")
+            return False
+            
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Call sonarqube projects search api failed with error: {e}")
+        return False
+    except Exception as e:
+        logging.error(f"Exception checking SonarQube project: {e}")
+        return False
+
+
+def _create_sonar_project(project_name: str, sonar_config: dict) -> None:
+    """
+    创建SonarQube项目
+    
+    Args:
+        project_name: 项目名称
+        sonar_config: SonarQube配置
+    """
+    try:
+        create_api_url = f"http://{sonar_config['host']}:{sonar_config['port']}/api/projects/create"
+        auth = (sonar_config.get("username"), sonar_config.get("password"))
+        
+        payload = {
+            "project": project_name, 
+            "name": project_name
+        }
+        
+        response = requests.post(create_api_url, auth=auth, data=payload, timeout=60)
+        
+        if response.status_code == 200:
+            logging.info("Call sonarqube projects create api success: 200")
+            logging.info(f"SonarQube project {project_name} created successfully")
+        else:
+            logging.error(f"Call sonarqube projects create api failed with status code: {response.status_code}")
+            
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Call sonarqube projects create api failed with error: {e}")
+    except Exception as e:
+        logging.error(f"Exception creating SonarQube project: {e}")
+
+
+def _query_sonar_measures(project_name: str, sonar_config: dict) -> dict:
+    """
+    查询SonarQube项目的度量指标
+    
+    Args:
+        project_name: 项目名称
+        sonar_config: SonarQube配置
+        
+    Returns:
+        dict: 查询结果
+    """
+    try:
+        logging.info("Waiting for SonarQube data processing...")
+        time.sleep(30)
+        
+        measures_api_url = f"http://{sonar_config['host']}:{sonar_config['port']}/api/measures/component"
+        auth = (sonar_config.get("username"), sonar_config.get("password"))
+        
+        params = {
+            "component": project_name, 
+            "metricKeys": "coverage,complexity,duplicated_lines_density,lines"
+        }
+        
+        response = requests.get(measures_api_url, auth=auth, params=params, timeout=30)
+        
+        if response.status_code == 200:
+            logging.info("Querying sonar-scanner report success: 200")
+            return json.loads(response.text)
+        else:
+            logging.error(f"Querying sonar-scanner report failed with status code: {response.status_code}")
+            return {"error": f"Query failed with status code: {response.status_code}"}
+            
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Querying sonar-scanner report failed with error: {e}")
+        return {"error": f"Query failed: {str(e)}"}
+    except Exception as e:
+        logging.error(f"Exception querying SonarQube measures: {e}")
+        return {"error": f"Query exception: {str(e)}"}
+
+
+def _handle_doc_checker(project_url: str, res_payload: dict, doc_type: str) -> None:
+    """
+    通用的文档检查器处理函数
+    
+    Args:
+        project_url: 项目URL
+        res_payload: 响应载荷
+        doc_type: 文档类型 ("api-doc" 或 "build-doc")
+    """
+    try:
+        result, error = check_doc_content(project_url, doc_type)
+        if error is None:
+            logging.info(f"{doc_type}-checker job done: {project_url}")
+            # 根据文档类型设置不同的结果格式
+            if doc_type == "api-doc":
+                res_payload["scan_results"]["api-doc-checker"] = result
+            else:  # build-doc
+                res_payload["scan_results"]["build-doc-checker"] = {"build-doc-checker": result} if result else {}
+        else:
+            logging.error(f"{doc_type}-checker job failed: {project_url}, error: {error}")
+            checker_name = f"{doc_type}-checker"
+            res_payload["scan_results"][checker_name] = {"error": error}
+    except Exception as e:
+        logging.error(f"{doc_type}-checker job failed: {project_url}, error: {e}")
+        checker_name = f"{doc_type}-checker"
+        res_payload["scan_results"][checker_name] = {"error": str(e)}
+
+
+def _handle_general_doc_checker(project_url: str, res_payload: dict, doc_type: str) -> None:
+    """处理通用文档检查器"""
+    _handle_doc_checker(project_url, res_payload, doc_type)
+
+
+def _handle_standard_command(command: str, project_url: str, res_payload: dict, command_handlers: dict) -> None:
+    """处理标准命令"""
+    handler = command_handlers[command]
+    result, error = handler(project_url)
+    if error is None:
+        logging.info(f"{command} job done: {project_url}")
+        res_payload["scan_results"][command] = result
+    else:
+        logging.error(f"{command} job failed: {project_url}, error: {error}")
+        res_payload["scan_results"][command] = {"error": error}
+
+
+def _cleanup_project_source(project_url: str) -> None:
+    """清理项目源码"""
+    try:
+        shell_script = shell_script_handlers["remove-source-code"].format(project_url=project_url)
+        result, error = shell_exec(shell_script)
+        
+        if error is None:
+            logging.info(f"Source code cleanup done: {project_url}")
+        else:
+            logging.warning(f"Source code cleanup failed: {project_url}, error: {error}")
+            
+    except Exception as e:
+        logging.error(f"Exception during source cleanup: {e}")
+
+
+def _send_results(callback_url: str, res_payload: dict) -> None:
+    """发送结果"""
+    if callback_url:
         try:
             response = request_url(callback_url, res_payload)
-            logging.info(f"Callback response: {response}")
+            if response:
+                logging.info("Results sent successfully")
+            else:
+                logging.error("Failed to send results")
         except Exception as e:
-            logging.error("Error happened when request to callback url: {}".format(e))
-            logging.error("put messages to dead letters: {}".format(body))
-            # logging.error("checker results: {}".format(res_payload))
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
-            return
+            logging.error(f"Exception sending results: {e}")
 
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+def _handle_error_and_nack(ch, method, body, error_msg: str) -> None:
+    """处理错误并拒绝消息"""
+    logging.error(f"Putting message to dead letters: {error_msg}")
+    ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+
 
 def run_criticality_score(project_url):
     cmd = ["criticality_score", "--repo", project_url, "--format", "json"]
@@ -1282,6 +1255,136 @@ def get_ohpm_info(project_url):
         logging.error("parse_oat_txt error: {}".format(e))
         return {"down_count": "", "dependent": "", "bedependent": ""}, None
 
+def parse_oat_txt_to_json(txt):
+    """
+    解析OAT工具输出的文本报告为JSON格式
+    
+    Args:
+        txt (str): OAT工具输出的文本内容
+        
+    Returns:
+        dict: 解析后的JSON格式数据
+    """
+    try:
+        de_str = txt.decode('unicode_escape') if isinstance(txt, bytes) else txt
+        result = {}
+        lines = de_str.splitlines()
+        current_section = None
+        pattern = r"Name:\s*(.+?)\s*Content:\s*(.+?)\s*Line:\s*(\d+)\s*Project:\s*(.+?)\s*File:\s*(.+)"
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            total_count_match = re.search(r"^(.*) Total Count:\s*(\d+)", line, re.MULTILINE)
+            category_name = total_count_match.group(1).strip() if total_count_match else "Unknown"
+
+            if 'Total Count' in line:
+                current_section = category_name
+                total_count = int(line.split(":")[1].strip())
+                result[current_section] = {"total_count": total_count, "details": []}
+            elif line.startswith("Name:"):
+                matches = re.finditer(pattern, line)
+                for match in matches:
+                    entry = {
+                        "name": match.group(1).strip(),
+                        "content": match.group(2).strip(),
+                        "line": int(match.group(3).strip()),
+                        "project": match.group(4).strip(),
+                        "file": match.group(5).strip(),
+                    }
+                if current_section and "details" in result[current_section]:
+                    result[current_section]["details"].append(entry)
+        return result
+    except Exception as e:
+        logging.error(f"parse_oat_txt error: {e}")
+        return {"error": str(e)}
+
+def _handle_readme_opensource_checker(project_url: str, res_payload: dict) -> None:
+    """处理README.OpenSource检查器"""
+    try:
+        result, error = check_readme_opensource(project_url)
+        if error is None:
+            logging.info(f"readme-opensource-checker job done: {project_url}")
+            res_payload["scan_results"]["readme-opensource-checker"] = {"readme-opensource-checker": result} if result else {}
+        else:
+            logging.error(f"readme-opensource-checker job failed: {project_url}, error: {error}")
+            res_payload["scan_results"]["readme-opensource-checker"] = {"error": error}
+    except Exception as e:
+        logging.error(f"readme-opensource-checker job failed: {project_url}, error: {e}")
+        res_payload["scan_results"]["readme-opensource-checker"] = {"error": str(e)}
+
+
+def _handle_build_doc_checker(project_url: str, res_payload: dict) -> None:
+    """处理构建文档检查器"""
+    _handle_doc_checker(project_url, res_payload, "build-doc")
+
+
+def _handle_changed_files_detector(project_url: str, res_payload: dict, commit_hash: str) -> None:
+    """处理变更文件检测器"""
+    
+    if not commit_hash:
+        logging.error("Fail to get commit hash!")
+        res_payload["scan_results"]["changed-files-since-commit-detector"] = {"error": "No commit hash provided"}
+        return
+    
+    context_path = os.getcwd()
+    try:
+        repository_path = os.path.join(context_path, os.path.splitext(os.path.basename(urlparse(project_url).path))[0])
+        os.chdir(repository_path)
+        logging.info(f"change os path to git repository directory: {repository_path}")
+    except OSError as e:
+        logging.error(f"failed to change os path to git repository directory: {e}")
+        res_payload["scan_results"]["changed-files-since-commit-detector"] = {"error": str(e)}
+        return
+
+    # 获取不同类型的变更文件
+    changed_files = _get_diff_files(commit_hash, "ACDMRTUXB")
+    new_files = _get_diff_files(commit_hash, "A")
+    rename_files = _get_diff_files(commit_hash, "R")
+    deleted_files = _get_diff_files(commit_hash, "D")
+    modified_files = _get_diff_files(commit_hash, "M")
+
+    os.chdir(context_path)
+
+    res_payload["scan_results"]["changed-files-since-commit-detector"] = {
+        "changed_files": changed_files,
+        "new_files": new_files,
+        "rename_files": rename_files,
+        "deleted_files": deleted_files,
+        "modified_files": modified_files
+    }
+    
+    logging.info(f"changed-files-since-commit-detector job done: {project_url}")
+
+def _get_diff_files(commit_hash: str, type="ACDMRTUXB"):
+    """
+    获取指定类型的变更文件
+    
+    Args:
+        commit_hash (str): 提交哈希
+        type (str): 变更类型，可以是: [(A|C|D|M|R|T|U|X|B)…​[*]]
+            Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R),
+            have their type changed (T), are Unmerged (U), are Unknown (X), 
+            or have had their pairing Broken (B).
+            
+    Returns:
+        list: 变更文件列表
+    """
+    try:
+        result = subprocess.check_output(
+            ["git", "diff", "--name-only", f"--diff-filter={type}", f"{commit_hash}..HEAD"],
+            stderr=subprocess.STDOUT,
+            text=True
+        )
+        return result.strip().split("\n") if result else []
+    except subprocess.CalledProcessError as e:
+        logging.error(f"failed to get {type} files: {e.output}")
+        return []
+
+
 if __name__ == "__main__":
     consumer(config["RabbitMQ"], "opencheck", callback_func)
     logging.info('Agents server ended.')
+
+# TODO: Add an adapter for various code platforms, like github, gitee, gitcode, etc.
