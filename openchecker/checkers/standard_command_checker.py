@@ -223,6 +223,71 @@ def get_ohpm_info(project_url: str) -> Tuple[Dict, str]:
         logger.error("parse_oat_txt error: {}".format(e))
         return {"down_count": "", "dependent": "", "bedependent": ""}, None
 
+def get_type_countries(project_url, type) -> Tuple[Dict, str]:
+    """
+    获取仓库'type'的国家分布信息
+
+    Args:
+        project_url: 仓库地址
+        type (str): 变更类型，可以是: issue_creators, pull_request_creators, stargazers(仓库维度).
+    
+    Returns:
+        list: 仓库'type'的国家分布信息数组
+    """
+    try:
+        if "github.com" in project_url:
+            from platform_adapter import platform_manager
+            project_url = project_url.replace('.git', '')
+            owner_name, repo_name = platform_manager.parse_project_url(project_url)
+            url = 'https://api.ossinsight.io/v1/repos/'+ owner_name +'/'+ repo_name +'/'+ type +'/countries/'
+            response = requests.get(url)
+            if response.status_code == 200:
+                data_body = json.loads(response.text)
+                data_json = data_body['data']
+                return data_json, None
+            else:
+                logger.error("Failed to get {}_countries for repo: {} \n Error: {}".format(type, project_url, "Not found"))
+                return False, "Not found"
+        else:
+            logger.error("Unsupported platform for {}_countries: {}".format(type, project_url))
+            return False, "Unsupported platform"
+    except Exception as e:
+        logger.error("get_{}_countries error: {}".format(type, e))
+        return False, None
+
+def get_type_organizations(project_url, type)  -> Tuple[Dict, str]:
+    """
+    获取仓库'type'的组织分布信息
+
+    Args:
+        project_url: 仓库地址
+        type (str): 变更类型，可以是: issue_creators, pull_request_creators, stargazers(仓库维度).
+    
+    Returns:
+        list: 仓库'type'的组织分布信息数组
+    """
+    try:
+        if "github.com" in project_url:
+            from platform_adapter import platform_manager
+            project_url = project_url.replace('.git', '')
+            owner_name, repo_name = platform_manager.parse_project_url(project_url)
+            url = 'https://api.ossinsight.io/v1/repos/'+ owner_name +'/'+ repo_name +'/'+ type +'/organizations/'
+            response = requests.get(url)
+            if response.status_code == 200:
+                data_body = json.loads(response.text)
+                data_json = data_body['data']
+                return data_json, None
+            else:
+                logger.error("Failed to get {}_organizations for repo: {} \n Error: {}".format(type, project_url, "Not found"))
+                return False, "Not found"
+        else:
+            logger.error("Unsupported platform for {}_organizations: {}".format(type, project_url))
+            return False, "Unsupported platform"
+    except Exception as e:
+        logger.error("get_{}_organizations error: {}".format(type, e))
+        return False, None
+
+
 
 def criticality_score_checker(project_url: str, res_payload: dict, config: dict) -> None:
     """
@@ -308,3 +373,35 @@ def ohpm_info_checker(project_url: str, res_payload: dict) -> None:
     else:
         logger.error(f"ohpm-info job failed: {project_url}, error: {error}")
         res_payload["scan_results"]["ohpm-info"] = {"error": error} 
+
+def repo_country_checker(project_url: str, type: str, res_payload: dict) -> None:
+    """
+    Repository country checker
+    Args:
+        project_url: Project URL
+        type: Type of data to fetch (e.g., 'issue_creators', 'pull_request_creators', 'stargazers')
+        res_payload: Response payload
+    """ 
+    result, error = get_type_countries(project_url, type)
+    if error is None:
+        logger.info(f"{type}_country job done: {project_url}")
+        res_payload["scan_results"][type + "_country"] = result
+    else:
+        logger.error(f"{type}_country job failed: {project_url}, error: {error}")
+        res_payload["scan_results"][type + "_country"] = {"error": error}
+
+def repo_organizations_checker(project_url: str, type: str, res_payload: dict) -> None:
+    """
+    Repository organizations checker
+    Args:
+        project_url: Project URL
+        type: Type of data to fetch (e.g., 'issue_creators', 'pull_request_creators', 'stargazers')
+        res_payload: Response payload
+    """ 
+    result, error = get_type_organizations(project_url, type)
+    if error is None:
+        logger.info(f"{type}_organizations job done: {project_url}")
+        res_payload["scan_results"][type + "_organizations"] = result
+    else:
+        logger.error(f"{type}_organizations job failed: {project_url}, error: {error}")
+        res_payload["scan_results"][type + "_organizations"] = {"error": error}
