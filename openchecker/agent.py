@@ -40,8 +40,7 @@ from checkers.standard_command_checker import (
     ohpm_info_checker,
     package_info_checker,
     scorecard_score_checker,
-    repo_country_checker,
-    repo_organizations_checker
+    repo_country_organizations_checker
 )
 from checkers.token_permissions_checker import token_permissions_checker
 from checkers.url_checker import url_checker
@@ -397,12 +396,7 @@ def _execute_commands(
         'code-count': lambda: code_count_checker(project_url, res_payload),
         'package-info': lambda: package_info_checker(project_url, res_payload),
         'ohpm-info': lambda: ohpm_info_checker(project_url, res_payload),
-        'issue-country': lambda: repo_country_checker(project_url, 'issue_creators',  res_payload),
-        'issue-organizations':lambda: repo_organizations_checker(project_url, 'issue_creators',  res_payload),
-        'pr-country': lambda: repo_country_checker(project_url, 'pull_request_creators',  res_payload),
-        'pr-organizations': lambda: repo_organizations_checker(project_url, 'pull_request_creators',  res_payload),
-        'repo-country': lambda: repo_country_checker(project_url, 'stargazers',  res_payload),
-        'repo-organizations': lambda: repo_organizations_checker(project_url, 'stargazers',  res_payload),
+        'repo-country-organizations': lambda: repo_country_organizations_checker(project_url, res_payload),
     }
     
     for command in command_list:
