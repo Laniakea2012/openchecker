@@ -4,7 +4,7 @@ WORKDIR /app
 RUN apk update && \
     apk add osv-scanner
 
-FROM maven:3.6.3-openjdk-11-slim As oat_builder
+FROM maven:3.8.6-openjdk-11-slim As oat_builder
 WORKDIR /app
 # Install oat_tool 
 Run apt update && apt install -y git && \ 
@@ -15,7 +15,7 @@ Run apt update && apt install -y git && \
 # WORKDIR /app
 # RUN go install github.com/google/osv-scanner/cmd/osv-scanner@v1
 
-FROM python:3.9-buster
+FROM python:3.9-bullseye
 WORKDIR /app
 
 # Copy osv-scanner binary
@@ -33,7 +33,6 @@ RUN apt-get update && apt-get install -y libbz2-1.0 xz-utils zlib1g libxml2-dev 
     --output /opt/scancode.tar.gz && \
     cd /opt && tar -xzf scancode.tar.gz && \
     echo "$(which python)" > scancode-toolkit-v${SCANCODE_VERSION}/PYTHON_EXECUTABLE && \
-    ln -s /usr/bin/python3 /usr/bin/python3.9 && \
     cd scancode-toolkit-v${SCANCODE_VERSION}/ && ./configure && \
     ln -s /opt/scancode-toolkit-v${SCANCODE_VERSION}/scancode /usr/bin/scancode && \
     rm /opt/scancode.tar.gz
@@ -81,7 +80,7 @@ RUN cd /opt && wget https://github.com/ossf/scorecard/releases/download/v5.2.1/s
 COPY . .
 RUN chmod a+x scripts/entrypoint.sh && \
     pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt && \
-    pip install --upgrade urllib3
+    pip install --upgrade urllib3 flask-jwt
 
 # Install criticality
 RUN pip install criticality_score  \
