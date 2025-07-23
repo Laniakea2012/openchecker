@@ -21,25 +21,29 @@ def run_criticality_score(project_url: str, config: dict) -> Tuple[Dict, str]:
     Returns:
         Tuple[Dict, str]: (result, error)
     """
-    cmd = ["criticality_score", "--repo", project_url, "--format", "json"]
-    github_token = config["Github"]["access_key"]
-    os.environ['GITHUB_AUTH_TOKEN'] = github_token
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode == 0:
-        json_str = result.stderr
-        json_str = json_str.replace("\n", "")
-        pattern = r'{.*?}'
-        match = re.search(pattern, json_str)
-        json_res = {}
-        if match:
-            json_score = match.group()
-            try:
-                json_res = json.loads(json_score)
-                criticality_score = json_res['criticality_score']
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse criticality score JSON: {e}")
-                return None, "Failed to parse criticality score JSON."
-            return {"criticality_score": criticality_score}, None
+    if "github.com" in project_url:
+        cmd = ["criticality_score", "--repo", project_url, "--format", "json"]
+        github_token = config["Github"]["access_key"]
+        os.environ['GITHUB_AUTH_TOKEN'] = github_token
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            json_str = result.stderr
+            json_str = json_str.replace("\n", "")
+            pattern = r'{.*?}'
+            match = re.search(pattern, json_str)
+            json_res = {}
+            if match:
+                json_score = match.group()
+                try:
+                    json_res = json.loads(json_score)
+                    criticality_score = json_res['criticality_score']
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse criticality score JSON: {e}")
+                    return None, "Failed to parse criticality score JSON."
+                return {"criticality_score": criticality_score}, None
+        else:
+            logger.error(f"Criticality score command failed: {result.stderr}")
+            return None, "Criticality score command failed."
     else:
         return None, "URL is not supported by criticality score."
 
@@ -54,16 +58,20 @@ def run_scorecard_cli(project_url: str) -> Tuple[Dict, str]:
     Returns:
         Tuple[Dict, str]: (result, error)
     """
-    cmd = ["scorecard", "--repo", project_url, "--format", "json"]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode == 0:
-        try:
-            scorecard_json = json.loads(result.stdout)
-            scorecard_json = simplify_scorecard(scorecard_json)
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse scorecard JSON: {e}")
-            return None, "Failed to parse scorecard JSON."
-        return scorecard_json, None
+    if "github.com" in project_url:
+        cmd = ["scorecard", "--repo", project_url, "--format", "json"]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            try:
+                scorecard_json = json.loads(result.stdout)
+                scorecard_json = simplify_scorecard(scorecard_json)
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse scorecard JSON: {e}")
+                return None, "Failed to parse scorecard JSON."
+            return scorecard_json, None
+        else:
+            logger.error(f"Scorecard command failed: {result.stderr}")
+            return None, "Scorecard command failed."
     else:
         return None, "URL is not supported by scorecard CLI."
 
@@ -268,8 +276,7 @@ def get_type_organizations(project_url, type)  -> Tuple[Dict, str]:
         list: 仓库'type'的组织分布信息数组
     """
     try:
-        if "github.com" in project_url:
-            
+        if "github.com" in project_url:           
             project_url = project_url.replace('.git', '')
             owner_name, repo_name = platform_manager.parse_project_url(project_url)
             url = f'https://api.ossinsight.io/v1/repos/{owner_name}/{repo_name}/{type}/organizations/'
