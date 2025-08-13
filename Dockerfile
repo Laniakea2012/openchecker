@@ -4,10 +4,10 @@ WORKDIR /app
 RUN apk update && \
     apk add osv-scanner
 
-FROM maven:3.8.6-openjdk-11-slim As oat_builder
+FROM maven:3.8.6-openjdk-11-slim AS oat_builder
 WORKDIR /app
 # Install oat_tool 
-Run apt update && apt install -y git && \ 
+RUN apt update && apt install -y git && \ 
     git clone https://gitee.com/openharmony-sig/tools_oat.git && \
     cd tools_oat && git checkout tags/v2.0.0 && mvn package
 
@@ -79,12 +79,11 @@ RUN cd /opt && wget https://github.com/ossf/scorecard/releases/download/v5.2.1/s
 
 COPY . .
 RUN chmod a+x scripts/entrypoint.sh && \
-    pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt && \
-    pip install --upgrade urllib3 flask-jwt
-
-# Install criticality
-RUN pip install criticality_score  \
-    && cp -f openchecker/criticality/run.py  /usr/local/lib/python3.9/site-packages/criticality_score/run.py
+    pip install --upgrade pip && \
+    pip install --upgrade urllib3 && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install criticality_score && \
+    cp -f openchecker/criticality/run.py  /usr/local/lib/python3.9/site-packages/criticality_score/run.py
 
 
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]

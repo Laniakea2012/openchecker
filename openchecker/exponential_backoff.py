@@ -21,7 +21,7 @@ def retry_with_exponential_backoff(
                     requests.exceptions.ConnectionError,
                     requests.exceptions.Timeout,
                     requests.exceptions.HTTPError,
-                    urllib3.exceptions.NameResolutionError)
+                    urllib3.exceptions.NewConnectionError)
     ):
     """Retry a function with exponential backoff."""
  

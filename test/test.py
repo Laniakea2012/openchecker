@@ -18,7 +18,7 @@ API测试脚本
 # 2. 使用令牌访问受保护的路由
 # curl -X POST http://localhost:8083/opencheck \
 #   -H "Content-Type: application/json" \
-#   -H "Authorization: JWT <access_token>" \
+#   -H "Authorization: Bearer <access_token>" \
 #   -d '{
 #     "commands": ["osv-scanner", "scancode"],
 #     "project_url": "https://github.com/example/project",
@@ -57,7 +57,7 @@ if __name__ == "__main__":
             exit()
 
     testURL = baseURL + 'test'
-    headers['Authorization'] = 'JWT' + ' ' + access_token
+    headers['Authorization'] = 'Bearer' + ' ' + access_token
     payload = {
         "message": 'ping for test'
     }

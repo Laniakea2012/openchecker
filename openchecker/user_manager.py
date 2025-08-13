@@ -30,6 +30,7 @@ def authenticate(username, password):
     user = usernameTable.get(username, None)
     if user and compare_digest(user.password.encode('utf-8'), password.encode('utf-8')):
         return user
+    return None
 
 def identity(payload):
     userID = payload['identity']

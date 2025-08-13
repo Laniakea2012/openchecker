@@ -1,6 +1,6 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
-from flask_jwt import JWT, jwt_required, current_identity
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
 from user_manager import authenticate, identity
 from datetime import timedelta
 import os
@@ -27,12 +27,33 @@ expires_minutes = int(jwt_config.get("expires_minutes", 30))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secret_key
-# app.config['JWT_AUTH_URL_RULE'] = '/auth'
-app.config['JWT_EXPIRATION_DELTA'] = timedelta(minutes=expires_minutes)
+app.config['JWT_SECRET_KEY'] = secret_key
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=expires_minutes)
 
 api = Api(app)
 
-jwt = JWT(app, authenticate, identity)
+jwt = JWTManager(app)
+
+# Authentication route
+@app.route('/auth', methods=['POST'])
+def auth():
+    # try Basic Auth
+    auth = request.authorization
+    if auth and auth.username and auth.password:
+        user = authenticate(auth.username, auth.password)
+        if not user:
+            return {"error": "Invalid credentials"}, 401
+        access_token = create_access_token(identity=user.id)
+        return {"access_token": access_token, "token_type": "Bearer"}
+    # try JSON body
+    data = request.get_json()
+    if data and 'username' in data and 'password' in data:
+        user = authenticate(data['username'], data['password'])
+        if not user:
+            return {"error": "Invalid credentials"}, 401
+        access_token = create_access_token(identity=user.id)
+        return {"access_token": access_token, "token_type": "Bearer"}
+    return {"error": "Missing credentials"}, 401
 
 config = read_config('config/config.ini', "RabbitMQ")
 
@@ -66,17 +87,20 @@ def handle_exception(e):
 class Test(Resource):
     @jwt_required()
     def get(self):
-        logger.info("Test endpoint called", extra={'extra_fields': {'user_id': current_identity.id}})
-        return current_identity
+        user_id = get_jwt_identity()
+        user = identity({'identity': user_id})
+        logger.info("Test endpoint called", extra={'extra_fields': {'user_id': user_id}})
+        return user
 
     @jwt_required()
     def post(self):
         payload = request.get_json()
         message = payload['message']
 
+        user_id = get_jwt_identity()
         logger.info("Test POST endpoint called", 
                    extra={'extra_fields': {
-                       'user_id': current_identity.id,
+                       'user_id': user_id,
                        'message': message
                    }})
 
@@ -99,9 +123,10 @@ class OpenCheck(Resource):
             "task_metadata": payload['task_metadata']
         }
 
+        user_id = get_jwt_identity()
         logger.info("Started processing OpenCheck request", 
                    extra={'extra_fields': {
-                       'user_id': current_identity.id,
+                       'user_id': user_id,
                        'project_url': payload['project_url'],
                        'commands': payload['commands'],
                        'callback_url': payload['callback_url']
