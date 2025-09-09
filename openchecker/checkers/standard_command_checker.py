@@ -3,6 +3,7 @@ import subprocess
 import json
 import re
 import requests
+import yaml
 from typing import Dict, Tuple, Any
 from logger import get_logger
 from platform_adapter import platform_manager
@@ -144,11 +145,15 @@ def get_package_info(project_url: str) -> Tuple[Dict, str]:
     if response.status_code == 200:
         data = response.json()
         description = data['description']
-        home_url = data['homepage']
+        # home_url = data['homepage']
         version_data = data["versions"]
         *_, last_version = version_data.items()
         dependency = last_version[1].get("dependencies", {})
         dependent_count = len(dependency)
+        repo_info, repo_error = platform_manager.get_repo_info(project_url)
+        if repo_error:
+            logger.error(f"Failed to get repo info for {project_url}: {repo_error}")
+            return {"description": False, "home_url": False, "dependent_count": False, "down_count": False, "day_enter": False}, repo_error
         url_down = f"https://api.npmjs.org/downloads/range/last-month/{package_name}"
         response_down = requests.get(url_down)
         if response_down.status_code == 200:
@@ -160,11 +165,11 @@ def get_package_info(project_url: str) -> Tuple[Dict, str]:
             day_enter = last_month[0]['day'] + " - " + last_month[len(last_month) - 1]['day']   
             return {
                 "description": description, 
-                "home_url": home_url, 
+                "home_url": repo_info.get("homepage", ""), 
                 "dependent_count": dependent_count, 
                 "down_count": down_count, 
                 "day_enter": day_enter
-                }, None
+            }, None
         elif response.status_code == 404:
             logger.error("Failed to get down_count for package: {} \n Error: Not found".format(package_name))
             return {"description": False, "home_url": False, "dependent_count": False, "down_count": False, "day_enter": False}, "Not found"
@@ -295,7 +300,34 @@ def get_type_organizations(project_url, type)  -> Tuple[Dict, str]:
         logger.error("get_{}_organizations error: {}".format(type, e))
         return False, None
 
+def get_eol_info(project_url: str) -> Tuple[Dict, str]:
+    """
+    Get end-of-life (EOL) information
 
+    Args:
+        project_url: Project URL
+        
+    Returns:
+        Tuple[Dict, str]: (result, error)
+    """
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        abs_dir = os.path.dirname(os.path.dirname(script_dir))
+        file_path = os.path.join(abs_dir, 'config', 'eol.yaml')
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = yaml.safe_load(file)
+        eol_list = data.get("EOL LIST", {})
+        project_url = project_url.replace('.git', '')
+        for item in eol_list:
+            if item['identifier'] == project_url:
+                eol_status = item['eol']
+                eol_release = item['release']
+                eol_time = item['eolTime']
+                return {"elo_status": eol_status, "eol_release": eol_release, "eol_time": eol_time}, None
+        return {"elo_status": "", "eol_release": "", "eol_time": ""}, None 
+    except Exception as e:
+        logger.error("eol_info error: {}".format(e))
+        return {"elo_status": "", "eol_release": "", "eol_time": ""}, None
 
 def criticality_score_checker(project_url: str, res_payload: dict, config: dict) -> None:
     """
@@ -438,3 +470,19 @@ def repo_country_organizations_checker(project_url: str, res_payload: dict) -> N
     else:
         logger.error(f"stargazers_organizations job failed: {project_url}, error: {error_repo_org}")
         res_payload["scan_results"]["repo-country-organizations"]["stargazers_organizations"] = {"error": error_repo_org}
+    
+def eol_checker(project_url: str, res_payload: dict) -> None:
+    """
+    eol checker
+    
+    Args:
+        project_url: Project URL
+        res_payload: Response payload
+    """
+    result, error = get_eol_info(project_url)
+    if error is None:
+        logger.info(f"eol-checker job done: {project_url}")
+        res_payload["scan_results"]["eol-checker"] = result
+    else:
+        logger.error(f"eol-checker job failed: {project_url}, error: {error}")
+        res_payload["scan_results"]["eol-checker"] = {"error": error}

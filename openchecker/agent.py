@@ -40,7 +40,8 @@ from checkers.standard_command_checker import (
     ohpm_info_checker,
     package_info_checker,
     scorecard_score_checker,
-    repo_country_organizations_checker
+    repo_country_organizations_checker,
+    eol_checker
 )
 from checkers.token_permissions_checker import token_permissions_checker
 from checkers.url_checker import url_checker
@@ -397,6 +398,7 @@ def _execute_commands(
         'package-info': lambda: package_info_checker(project_url, res_payload),
         'ohpm-info': lambda: ohpm_info_checker(project_url, res_payload),
         'repo-country-organizations': lambda: repo_country_organizations_checker(project_url, res_payload),
+        'eol-checker': lambda: eol_checker(project_url, res_payload)
     }
     
     for command in command_list:

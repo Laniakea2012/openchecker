@@ -1,0 +1,978 @@
+EOL LIST:
+  - identifier: https://github.com/AFNetworking/AFNetworking
+    repoName: AFNetworking
+    release:
+    - 3.2.1
+    - 4.0.1
+    eol: Y
+    eolTime: '2023-01-18'
+  - identifier: https://github.com/angular-translate/bower-angular-translate
+    repoName: angular-translate
+    release:
+    - 2.18.2
+    - 2.18.1
+    eol: Y
+    eolTime: '2024-01-22'
+  - identifier: https://github.com/angular/angular.js
+    repoName: angular.js
+    release:
+    - 1.8.0
+    - 1.7.9
+    - 1.7.8
+    eol: Y
+    eolTime: '2022-04-13'
+  - identifier: https://github.com/ansman/validate.js
+    repoName: ansman/validate.js
+    release:
+    - 0.13.1
+    eol: Y
+    eolTime: '2021-12-12'
+  - identifier: https://github.com/hsiafan/apk-parser
+    repoName: APK-parser
+    release:
+    - 2.6.6
+    - 2.6.7
+    - 2.6.10
+    eol: Y
+    eolTime: '2020-09-21'
+  - identifier: https://github.com/twbs/release
+    repoName: Bootstrap
+    release:
+    - 4.4.1
+    - 4.6.0
+    eol: Y
+    eolTime: '2023-01-01'
+  - identifier: https://github.com/angular/bower-angular-animate
+    repoName: bower-angular-animate
+    release:
+    - 1.7.8
+    - 1.8.2
+    eol: Y
+    eolTime: '2022-04-13'
+  - identifier: https://github.com/containerd/containerd/blob/main/RELEASES.md
+    repoName: containerd/containerd
+    release:
+    - 1.2.0
+    - v1.6.16
+    - 1.5.10
+    - v1.7.25
+    eol: Y
+    eolTime: '2020-10-15'
+  - identifier: https://github.com/brix/crypto-js
+    repoName: crypto-js
+    release:
+    - 4.2.0
+    - 4.0.0
+    - 4.1.1
+    eol: Y
+    eolTime: '2023-10-25'
+  - identifier: https://github.com/dgrijalva/jwt-go
+    repoName: dgrijalva/jwt-go
+    release:
+    - v4.0.0-preview1
+    eol: Y
+    eolTime: '2022-05-21'
+  - identifier: https://github.com/pkg/errors
+    repoName: errors
+    release:
+    - v0.8.1
+    - v0.9.1
+    - 5dd12d0cfe7f152f80558d591504ce68
+    eol: Y
+    eolTime: '2021-12-01'
+  - identifier: https://github.com/jurmous/etcd4j
+    repoName: etcd4j
+    release:
+    - 2.18.0
+    eol: Y
+    eolTime: '2022-02-25'
+  - identifier: https://github.com/DataDog/go-python3
+    repoName: go-python3
+    release:
+    - 0.1.1
+    eol: Y
+    eolTime: '2022-08-10'
+  - identifier: https://github.com/google/gofuzz
+    repoName: gofuzz
+    release:
+    - v1.0.0
+    - v1.2.0
+    eol: Y
+    eolTime: '2024-01-10'
+  - identifier: https://github.com/gogo/protobuf
+    repoName: gogo/protobuf
+    release:
+    - v1.2.1
+    - v1.3.1
+    - v1.3.2
+    eol: Y
+    eolTime: '2023-01-01'
+  - identifier: https://github.com/NVIDIA/gpu-monitoring-tools
+    repoName: GPU Monitoring Tools
+    release:
+    - 021662a21098fc7f85a5a56f620df0fe
+    - 2.3.0
+    eol: Y
+    eolTime: '2021-11-03'
+  - identifier: https://github.com/hibernate/hibernate-jpa-api
+    repoName: Hibernate JPA 2.1 API
+    release:
+    - 1.0.2.Final
+    eol: Y
+    eolTime: '2022-10-27'
+  - identifier: https://github.com/ngx-translate/http-loader
+    repoName: http-loader
+    release:
+    - 4.0.0
+    - 6.0.0
+    eol: Y
+    eolTime: '2021-11-09'
+  - identifier: https://github.com/nodejs/http-parser
+    repoName: http-parser
+    release:
+    - v2.9.3
+    - 2.9.4
+    - 2.9.2
+    eol: Y
+    eolTime: '2022-11-06'
+  - identifier: https://github.com/Intel-Media-SDK/MediaSDK
+    repoName: IntelMediaSdk
+    release:
+    - 19.4.0
+    - 22.5.4
+    - 22.4.4
+    eol: Y
+    eolTime: '2023-05-18'
+  - identifier: https://github.com/jaegertracing/jaeger-client-java
+    repoName: jaeger-client-java
+    release:
+    - v1.1.0
+    - v1.3.0
+    - 1.6.0
+    eol: Y
+    eolTime: '2022-07-01'
+  - identifier: https://github.com/jgraph/jgraphx
+    repoName: jgraphx
+    release:
+    - 4.1.0
+    - 4.2.2
+    eol: Y
+    eolTime: '2020-11-14'
+  - identifier: https://github.com/blueimp/jQuery-File-Upload
+    repoName: jQuery-File-Upload
+    release:
+    - 10.4.0
+    - 10.31.0
+    eol: Y
+    eolTime: '2023-05-25'
+  - identifier: https://github.com/keras-team/keras-applications
+    repoName: Keras-Applications
+    release:
+    - 1.0.8
+    eol: Y
+    eolTime: '2022-11-03'
+  - identifier: https://github.com/keras-team/keras-preprocessing
+    repoName: Keras-Preprocessing
+    release:
+    - 1.1.0
+    eol: Y
+    eolTime: '2022-11-03'
+  - identifier: https://github.com/lettuce-io/lettuce-core/wiki/Lettuce-Versions
+    repoName: lettuce
+    release:
+    - 5.2.2.RELEASE
+    - 6.0.0.RELEASE
+    - 6.1.6.RELEASE
+    eol: Y
+    eolTime: '2020-01-31'
+  - identifier: https://github.com/criticalstack/libevhtp
+    repoName: libevhtp
+    release:
+    - 1.2.18
+    eol: Y
+    eolTime: '2021-07-01'
+  - identifier: https://github.com/github/ietf-cms
+    repoName: mastahyeti/cms
+    release:
+    - 0.0.7
+    - v0.1.0
+    eol: Y
+    eolTime: '2021-10-05'
+  - identifier: https://github.com/mindspore-ai/mindspore/blob/master/README_CN.md
+    repoName: MindSpore
+    release:
+    - 0.7.0-beta
+    - 1.1.0
+    - 1.3.0
+    - 1.2.0
+    - 1.5.1
+    - 1.8.1
+    eol: Y
+    eolTime: '2021-02-28'
+  - identifier: https://github.com/atdt/monotonic
+    repoName: monotonic
+    release:
+    - '1.5'
+    - '1.6'
+    eol: Y
+    eolTime: '2021-04-01'
+  - identifier: https://github.com/jgraph/mxgraph
+    repoName: mxgraph
+    release:
+    - 4.1.0
+    - 4.2.0
+    - 4.2.2
+    eol: Y
+    eolTime: '2021-04-01'
+  - identifier: https://github.com/al45tair/netifaces
+    repoName: Netifaces
+    release:
+    - 0.10.9
+    - 0.11.0
+    eol: Y
+    eolTime: '2021-06-11'
+  - identifier: https://github.com/nodejs/release#release-schedule
+    repoName: Node.js
+    release:
+    - 14.20.1
+    - 12.21.0
+    - 12.20.0
+    - 12.18.4
+    - 12.18.0
+    - 12.16.1
+    - 12.22.2
+    - 12.22.1
+    - 12.22.9
+    - 12.22.7
+    - 12.22.6
+    - 12.22.5
+    - 12.22.4
+    - 12.22.12
+    - 14.20.0
+    - 14.19.1
+    - 14.18.3
+    - 14.18.1
+    - 14.21.1
+    - 14.21.3
+    - 14.21.2
+    - 18.18.2
+    - 18.17.1
+    - v18.20.1
+    - v18.19.1
+    - 18.14.1
+    - v16.20.2
+    eol: Y
+    eolTime: '2023-04-30'
+  - identifier: https://github.com/opendistro-for-elasticsearch/security
+    repoName: Open Distro for Elasticsearch
+    release:
+    - 1.3.0
+    - 1.9.0.1
+    - v1.13.1.0
+    eol: Y
+    eolTime: '2021-05-04'
+  - identifier: https://gitee.com/src-openeuler/docker-anaconda-addon
+    repoName: openEuler:docker-anaconda-addon
+    release:
+    - 0.4-10.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/edac-utils
+    repoName: openEuler:edac-utils
+    release:
+    - 0.16-20.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/gamin
+    repoName: openEuler:gamin
+    release:
+    - 0.1.10-37.oe1
+    - 0.1.10-39.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/geolite2
+    repoName: openEuler:geolite2
+    release:
+    - 20181002-2.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/hardlink
+    repoName: openEuler:hardlink
+    release:
+    - 1.0-24.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/langpacks
+    repoName: openEuler:langpacks
+    release:
+    - 1.0-16.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/libcroco
+    repoName: openEuler:libcroco
+    release:
+    - 0.6.12-13.oe1
+    - 0.6.13-1.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/libmodman
+    repoName: openEuler:libmodman
+    release:
+    - 2.0.1-19.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/libpng12
+    repoName: openEuler:libpng12
+    release:
+    - 1.2.57-11.oe1
+    - 1.2.57-12.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/libXxf86misc
+    repoName: openEuler:libXxf86misc
+    release:
+    - 1.0.4-4.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/mozjs52
+    repoName: openEuler:mozjs52
+    release:
+    - 52.9.0-5.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/mozjs60
+    repoName: openEuler:mozjs60
+    release:
+    - 60.2.2-4.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/oci-systemd-hook
+    repoName: openEuler:oci-systemd-hook
+    release:
+    - 0.1.17-4.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://gitee.com/src-openeuler/tpm2-abrmd-selinux
+    repoName: openEuler:tpm2-abrmd-selinux
+    release:
+    - 2.2.0-1.oe1
+    - 2.3.1-1.oe1
+    eol: Y
+    eolTime: '2023-04-17'
+  - identifier: https://github.com/inexorabletash/polyfill
+    repoName: polyfill
+    release:
+    - v0.1.42
+    - v0.1.43
+    eol: Y
+    eolTime: '2021-12-14'
+  - identifier: https://github.com/microsoft/ptvsd
+    repoName: ptvsd
+    release:
+    - 4.2.5
+    eol: Y
+    eolTime: '2023-08-03'
+  - identifier: https://github.com/handsontable/react-handsontable
+    repoName: react-handsontable
+    release:
+    - 3.1.2
+    - 4.0.0
+    eol: Y
+    eolTime: '2022-03-15'
+  - identifier: https://github.com/jsierles/react-native-audio
+    repoName: react-native-audio
+    release:
+    - 4.3.1
+    - 4.3.0
+    eol: Y
+    eolTime: '2020-08-22'
+  - identifier: https://github.com/listenzz/react-native-modal-translucent
+    repoName: react-native-modal-translucent
+    release:
+    - 3.0.1
+    eol: Y
+    eolTime: '2022-06-30'
+  - identifier: https://github.com/exupero/saveSvgAsPng
+    repoName: saveSvgAsPng
+    release:
+    - v1.4.17
+    eol: Y
+    eolTime: '2020-06-20'
+  - identifier: https://github.com/spring-projects/spring-security-oauth
+    repoName: Spring Security Oauth
+    release:
+    - 2.4.0.RELEASE
+    eol: Y
+    eolTime: '2022-06-01'
+  - identifier: https://github.com/spring-cloud/spring-cloud-security
+    repoName: spring-cloud-security
+    release:
+    - 2.2.1.release
+    - 2.2.5.RELEASE
+    eol: Y
+    eolTime: '2022-04-05'
+  - identifier: https://github.com/spring-projects/spring-integration-kafka
+    repoName: spring-integration-kafka
+    release:
+    - v3.2.1.RELEASE
+    - 3.3.1.RELEASE
+    eol: Y
+    eolTime: '2023-03-31'
+  - identifier: https://github.com/spring-projects/spring-security-oauth2-boot
+    repoName: spring-security-oauth2-autoconfigure
+    release:
+    - 2.2.2.RELEASE
+    - 2.2.6.RELEASE
+    eol: Y
+    eolTime: '2022-06-01'
+  - identifier: https://github.com/webpack-contrib/url-loader
+    repoName: url-loader
+    release:
+    - 2.1.0
+    - 4.1.1
+    eol: Y
+    eolTime: '2021-03-17'
+  - identifier: https://github.com/apache/incubator-weex-loader
+    repoName: weex-loader
+    release:
+    - v0.7.12
+    eol: Y
+    eolTime: '2021-06-03'
+  - identifier: https://gitee.com/openeuler/bishengjdk-11/wikis/%E4%B8%AD%E6%96%87%E6%96%87%E6%A1%A3/LifeCycle
+    repoName: Bisheng JDK
+    release:
+    - 11.0.8
+    - 11.0.18
+    eol: Y
+    eolTime: '2023-12-01'
+  - identifier: https://github.com/geoserver/geoserver/wiki/Release-Schedule
+    repoName: GeoWebCache
+    release:
+    - 1.20.2
+    - 1.15.4
+    eol: Y
+    eolTime: '2022-09-30'
+  - identifier: https://github.com/intel/haxm
+    repoName: haxm
+    release:
+    - v7.6.5
+    - v7.7.1
+    eol: Y
+    eolTime: '2023-01-28'
+  - identifier: https://github.com/NVIDIA/nvidia-docker
+    repoName: nvidia-docker
+    release:
+    - v2.3.0
+    - 2.1.1
+    eol: Y
+    eolTime: '2024-01-22'
+  - identifier: https://github.com/react-native-art/art
+    repoName: '@react-native-community/art'
+    release:
+    - 1.2.0
+    eol: Y
+    eolTime: '2021-10-09'
+  - identifier: https://github.com/opendistro-for-elasticsearch/alerting-kibana-plugin
+    repoName: alerting-kibana-plugin
+    release:
+    - 1.13.0.0
+    eol: Y
+    eolTime: '2022-08-02'
+  - identifier: https://github.com/apache/sentry
+    repoName: Apache Sentry
+    release:
+    - release-2.1.0
+    - release-2.2.0
+    eol: Y
+    eolTime: '2021-05-13'
+  - identifier: https://github.com/alexa/avs-device-sdk
+    repoName: avs-device-SDK
+    release:
+    - v1.18.0
+    eol: Y
+    eolTime: '2024-01-16'
+  - identifier: https://github.com/angular/bower-angular-sanitize
+    repoName: bower-angular-sanitize
+    release:
+    - 1.7.9
+    - 1.8.2
+    eol: Y
+    eolTime: '2022-04-13'
+  - identifier: https://github.com/ehcache/ehcache3
+    repoName: ehcache
+    release:
+    - 2.10.6
+    eol: Y
+    eolTime: '2023-09-30'
+  - identifier: https://github.com/kr/pty
+    repoName: kr/pty
+    release:
+    - v1.1.4
+    eol: Y
+    eolTime: '2020-04-17'
+  - identifier: https://github.com/cipchk/ngx-ueditor
+    repoName: ngx-ueditor
+    release:
+    - 10.0.0
+    - 14.0.0
+    eol: Y
+    eolTime: '2023-11-02'
+  - identifier: https://github.com/opendistro-for-elasticsearch/cross-cluster-replication
+    repoName: Open Distro Cross Cluster Replication Plugin
+    release:
+    - 1.13.0.0-experimental
+    eol: Y
+    eolTime: '2022-08-09'
+  - identifier: https://github.com/opendistro-for-elasticsearch/asynchronous-search
+    repoName: Open Distro for Elasticsearch asynchronous search
+    release:
+    - 1.13.0.0
+    eol: Y
+    eolTime: '2022-08-09'
+  - identifier: https://github.com/opendistro-for-elasticsearch/index-management
+    repoName: Open Distro for Elasticsearch Index Management
+    release:
+    - 1.13.0.0
+    - 1.13.2.0
+    eol: Y
+    eolTime: '2022-08-02'
+  - identifier: https://github.com/opendistro-for-elasticsearch/job-scheduler
+    repoName: Open Distro for Elasticsearch Job Scheduler
+    release:
+    - 1.13.0.0
+    eol: Y
+    eolTime: '2022-08-02'
+  - identifier: https://github.com/opendistro-for-elasticsearch/sql
+    repoName: Open Distro for Elasticsearch SQL
+    release:
+    - 1.13.0.0
+    - 1.13.2.0
+    eol: Y
+    eolTime: '2022-08-02'
+  - identifier: https://github.com/openstack-archive/python-ceilometerclient
+    repoName: python-ceilometerclient
+    release:
+    - 2.9.1
+    eol: Y
+    eolTime: '2020-06-27'
+  - identifier: https://github.com/opendistro-for-elasticsearch/security-kibana-plugin
+    repoName: security-kibana-plugin
+    release:
+    - 1.13.0.1
+    eol: Y
+    eolTime: '2022-08-02'
+  - identifier: https://github.com/apache/sqoop
+    repoName: sqoop
+    release:
+    - 1.99.3
+    eol: Y
+    eolTime: '2021-07-09'
+  - identifier: https://github.com/robinvdvleuten/vuex-persistedstate
+    repoName: vuex-persistedstate
+    release:
+    - 3.2.0
+    - 2.5.4
+    eol: Y
+    eolTime: '2022-02-05'
+  - identifier: https://github.com/opendistro-for-elasticsearch/alerting
+    repoName: alerting
+    release:
+    - v1.13.0.0
+    - v1.13.1.0
+    eol: Y
+    eolTime: '2022-08-02'
+  - identifier: https://github.com/babel/babel-eslint
+    repoName: babel-eslint
+    release:
+    - v10.1.0
+    eol: Y
+    eolTime: '2021-08-18'
+  - identifier: https://github.com/blueimp/JavaScript-MD5
+    repoName: blueimp/JavaScript-MD5
+    release:
+    - 2.18.0
+    eol: Y
+    eolTime: '2021-09-26'
+  - identifier: https://github.com/itsjavi/bootstrap-colorpicker
+    repoName: bootstrap-colorpicker
+    release:
+    - 3.4.0
+    eol: Y
+    eolTime: '2022-04-08'
+  - identifier: https://github.com/rickfast/consul-client
+    repoName: consul-client
+    release:
+    - 1.5.1
+    - 1.5.3
+    eol: Y
+    eolTime: '2023-07-27'
+  - identifier: https://github.com/handsontable/formula-parser
+    repoName: formula-parser
+    release:
+    - 4.0.0
+    eol: Y
+    eolTime: '2021-07-16'
+  - identifier: https://github.com/yidongnan/grpc-spring-boot-starter
+    repoName: GRPC Spring Boot Starter
+    release:
+    - 2.12.0.RELEASE
+    - 2.13.1.RELEASE
+    eol: Y
+    eolTime: '2023-11-15'
+  - identifier: https://github.com/influxdata/influxdb-python
+    repoName: influxdb-python
+    release:
+    - 5.3.0
+    eol: Y
+    eolTime: '2023-07-19'
+  - identifier: https://github.com/SpiderLabs/owasp-modsecurity-crs
+    repoName: owasp-modsecurity-crs
+    release:
+    - v3.3.2
+    eol: Y
+    eolTime: '2020-05-14'
+  - identifier: https://github.com/spring-cloud/spring-cloud-release/wiki/Supported-Versions#supported-releases
+    repoName: Spring Cloud
+    release:
+    - v2020.0.4
+    eol: Y
+    eolTime: '2023-01-01'
+  - identifier: https://github.com/docker/roadmap/issues
+    repoName: docker-compose
+    release:
+    - 1.29.2
+    eol: Y
+    eolTime: '2022-01-31'
+  - identifier: https://github.com/opsgenie/kubernetes-event-exporter
+    repoName: kubernetes-event-exporter
+    release:
+    - v0.11
+    eol: Y
+    eolTime: '2022-08-31'
+  - identifier: https://github.com/Grokzen/redis-py-cluster
+    repoName: redis-py-cluster
+    release:
+    - 2.1.3
+    eol: Y
+    eolTime: '2024-01-09'
+  - identifier: https://github.com/svga/SVGAPlayer-Android
+    repoName: SVGAPlayer-Android
+    release:
+    - 2.6.1
+    eol: Y
+    eolTime: '2023-02-06'
+  - identifier: https://github.com/mapgears/ol3-google-maps
+    repoName: ol3-google-maps
+    release:
+    - 1.7.0
+    - 1.7.1
+    - 1.8.0
+    - 1.6.0
+    eol: Y
+    eolTime: '2024-02-26'
+  - identifier: https://github.com/scikit-optimize/scikit-optimize
+    repoName: scikit-optimize
+    release:
+    - 0.9.0
+    - 0.8.1
+    eol: Y
+    eolTime: '2024-02-28'
+  - identifier: https://github.com/zTree/zTree_v3/issues/527
+    repoName: zTree
+    release:
+    - 3.5.42
+    - 3.5.48
+    - 3.5.40
+    eol: Y
+    eolTime: '2023-12-08'
+  - identifier: https://github.com/dabeaz/sly
+    repoName: sly
+    release:
+    - '0.4'
+    - '0.5'
+    eol: Y
+    eolTime: '2023-02-15'
+  - identifier: https://github.com/sqlcipher/android-database-sqlcipher
+    repoName: android-database-sqlcipher
+    release:
+    - 4.3.0
+    - 4.4.0
+    - 4.4.1
+    - 4.4.3
+    - 4.5.0
+    - 4.5.1
+    - 4.5.2
+    - 4.5.4
+    eol: Y
+    eolTime: '2023-09-01'
+  - identifier: https://github.com/kaorun343/vue-property-decorator
+    repoName: vue-property-decorator
+    release:
+    - 9.1.2
+    eol: Y
+    eolTime: '2024-02-07'
+  - identifier: https://github.com/viatra/org.eclipse.viatra
+    repoName: Eclipse VIATRA
+    release:
+    - 1.6.2
+    eol: Y
+    eolTime: '2024-03-11'
+  - identifier: https://github.com/zip-rs/zip-old
+    repoName: zip-rs
+    release:
+    - 0.6.0
+    eol: Y
+    eolTime: '2024-06-03'
+  - identifier: https://github.com/swisspol/GCDWebServer
+    repoName: GCDWebServer
+    release:
+    - 3.5.4
+    - 3.5.3
+    eol: Y
+    eolTime: '2023-01-11'
+  - identifier: https://github.com/layui/layer
+    repoName: layer
+    release:
+    - v3.5.1
+    eol: Y
+    eolTime: '2024-07-22'
+  - identifier: https://github.com/facebookresearch/fastText
+    repoName: fastText
+    release:
+    - 0.9.1
+    eol: Y
+    eolTime: '2024-03-19'
+  - identifier: https://gitee.com/ascend/pytorch#pytorch%E7%89%88%E6%9C%AC%E7%BB%B4%E6%8A%A4%E7%AD%96%E7%95%A5
+    repoName: torch-npu
+    release:
+    - 1.11.0
+    - 2.1.0
+    eol: N
+    eolTime: '2025-09-10'
+  - identifier: https://github.com/mitchellh/mapstructure
+    repoName: mitchellh/mapstructure
+    release:
+    - v1.2.1
+    - v1.3.3
+    eol: Y
+    eolTime: '2024-07-23'
+  - identifier: https://github.com/helm/helm-2to3
+    repoName: helm-2to3
+    release:
+    - v0.8.2
+    - v0.10.3
+    - v0.11.0
+    eol: Y
+    eolTime: '2024-07-18'
+  - identifier: https://github.com/dtolnay/serde-yaml
+    repoName: serde-yaml
+    release:
+    - 0.8.9
+    - 0.8.20
+    - 0.8.23
+    - 0.9.32
+    eol: Y
+    eolTime: '2024-03-25'
+  - identifier: https://github.com/google/ExoPlayer
+    repoName: ExoPlayer
+    release:
+    - r2.11.3
+    - 2.9.6
+    - r2.16.0
+    - r2.19.0
+    - r2.19.1
+    eol: Y
+    eolTime: '2024-07-25'
+  - identifier: https://github.com/square/javapoet
+    repoName: javapoet
+    release:
+    - 1.12.1
+    - 1.13.0
+    eol: Y
+    eolTime: '2024-10-11'
+  - identifier: https://github.com/GameTechDev/ISPCTextureCompressor
+    repoName: ISPCTextureCompressor
+    release:
+    - 14d998c02b71c356ff3a1ec1adc9243a517bbf38
+    eol: Y
+    eolTime: '2024-09-24'
+  - identifier: https://github.com/facebook/prop-types
+    repoName: prop-types
+    release:
+    - 15.7.2
+    - 15.8.1
+    eol: Y
+    eolTime: '2024-09-01'
+  - identifier: https://github.com/googlesamples/easypermissions
+    repoName: easypermissions
+    release:
+    - v3.0.0
+    eol: Y
+    eolTime: '2024-10-04'
+  - identifier: https://github.com/sass/node-sass
+    repoName: node-sass
+    release:
+    - 4.13.0
+    - 5.0.0
+    - 7.0.1
+    - 9.0.0
+    eol: Y
+    eolTime: '2024-07-25'
+  - identifier: https://github.com/apache/logging-flume
+    repoName: Apache Flume
+    release:
+    - 1.11.0
+    - 1.10.1
+    - 1.10.0
+    - 1.9.0
+    eol: Y
+    eolTime: '2024-10-10'
+  - identifier: https://github.com/alibaba/fastjson
+    repoName: fastjson
+    release:
+    - 1.2.83
+    - 1.2.79
+    - 1.2.75
+    - 1.2.70
+    - 1.2.68
+    eol: Y
+    eolTime: '2024-10-23'
+  - identifier: https://github.com/googlefonts/roboto-2
+    repoName: roboto
+    release:
+    - '2.138'
+    eol: Y
+    eolTime: '2024-10-23'
+  - identifier: https://github.com/osmdroid/osmdroid
+    repoName: osmdroid
+    release:
+    - 6.1.18
+    - 6.1.16
+    - 6.1.11
+    - 6.1.10
+    - 6.1.8
+    - 6.1.6
+    eol: Y
+    eolTime: '2024-11-20'
+  - identifier: https://github.com/go-spring/go-spring
+    repoName: go-spring
+    release:
+    - v1.1.3
+    - v1.1.1
+    - v1.0.2
+    eol: Y
+    eolTime: '2024-12-29'
+  - identifier: https://github.com/OpenFeign/feign-form
+    repoName: feign-form
+    release:
+    - 3.8.0
+    eol: Y
+    eolTime: '2024-12-31'
+  - identifier: https://github.com/madzak/python-json-logger
+    repoName: python-json-logger
+    release:
+    - 2.0.1
+    eol: Y
+    eolTime: '2024-12-21'
+  - identifier: https://github.com/x-extends/vxe-table
+    repoName: vxe-table
+    release:
+    - 4.3.10
+    - 4.4.6
+    eol: Y
+    eolTime: '2024-12-21'
+  - identifier: https://github.com/caged/d3-tip
+    repoName: d3-tip
+    release:
+    - 0.9.1
+    eol: Y
+    eolTime: '2020-03-17'
+  - identifier: https://github.com/choffmeister/roboto-fontface-bower
+    repoName: roboto-fontface
+    release:
+    - 0.10.0
+    eol: Y
+    eolTime: '2021-01-17'
+  - identifier: https://github.com/python-excel/xlwt
+    repoName: pypi-xlwt
+    release:
+    - 1.3.0
+    eol: Y
+    eolTime: '2020-05-04'
+  - identifier: https://github.com/square/picasso
+    repoName: picasso
+    release:
+    - '2.71828'
+    - '2.8'
+    eol: Y
+    eolTime: '2024-11-06'
+  - identifier: https://github.com/go-yaml/yaml
+    repoName: 'go-yaml '
+    release:
+    - v3.0.1
+    - v2.4.0
+    - v2.2.8
+    eol: Y
+    eolTime: '2025-04-02'
+  - identifier: https://github.com/golang/protobuf/blob/master/README.md
+    repoName: golang/protobuf
+    release:
+    - v1.5.4
+    - v1.5.3
+    - v1.5.1
+    eol: Y
+    eolTime: '2025-04-16'
+  - identifier: https://github.com/facebook/regenerator
+    repoName: regenerator-runtime
+    release:
+    - 0.14.1
+    - regenerator-runtime@0.14.0
+    - 0.13.11
+    - 0.13.9
+    - 0.13.5
+    eol: Y
+    eolTime: '2025-02-02'
+  - identifier: https://github.com/iamseth/oracledb_exporter
+    repoName: oracledb_exporter
+    release:
+    - 0.5.1
+    - 0.3.2
+    - 0.2.6
+    eol: Y
+    eolTime: '2025-02-14'
+  - identifier: https://github.com/golang/snappy
+    repoName: Snappy-Go
+    release:
+    - v0.0.5-0.20231225225746-43d5d4cd4e0e
+    eol: Y
+    eolTime: '2025-03-07'
+  - identifier: https://github.com/sybrenstuvel/python-rsa
+    repoName: python-rsa
+    release:
+    - '4.9'
+    - 4.7.2
+    - '4.6'
+    - '4.0'
+    eol: Y
+    eolTime: '2025-04-20'
+  - identifier: https://github.com/jemalloc/jemalloc
+    repoName: jemalloc
+    release:
+    - 5.3.0
+    - 5.2.1
+    eol: Y
+    eolTime: '2025-06-03'
+  - identifier: https://github.com/aws/aws-sdk-go
+    repoName: AWS SDK for Go
+    release:
+    - v1.44.247
+    - v1.55.6
+    eol: Y
+    eolTime: '2025-08-01'
+  - identifier: https://github.com/alibaba/tidevice
+    repoName: tidevice
+    release:
+    - 0.12.10
+    - 0.12.8
+    eol: Y
+    eolTime: '2025-06-17'
