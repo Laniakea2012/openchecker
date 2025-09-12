@@ -144,16 +144,21 @@ def get_package_info(project_url: str) -> Tuple[Dict, str]:
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        # description = data['description']
-        # home_url = data['homepage']
+        if 'github.com' in project_url:
+            repo_info, repo_error = platform_manager.get_repo_info(project_url)
+            if repo_error:
+                logger.error(f"Failed to get repo info for {project_url}: {repo_error}")
+                return {"description": False, "home_url": False, "dependent_count": False, "down_count": False, "day_enter": False}, repo_error
+            description = repo_info.get("description", "")
+            home_url = repo_info.get("homepage", "")
+        else:
+            description = data['description']
+            home_url = data['homepage']
         version_data = data["versions"]
         *_, last_version = version_data.items()
         dependency = last_version[1].get("dependencies", {})
         dependent_count = len(dependency)
-        repo_info, repo_error = platform_manager.get_repo_info(project_url)
-        if repo_error:
-            logger.error(f"Failed to get repo info for {project_url}: {repo_error}")
-            return {"description": False, "home_url": False, "dependent_count": False, "down_count": False, "day_enter": False}, repo_error
+        
         url_down = f"https://api.npmjs.org/downloads/range/last-month/{package_name}"
         response_down = requests.get(url_down)
         if response_down.status_code == 200:
@@ -164,8 +169,8 @@ def get_package_info(project_url: str) -> Tuple[Dict, str]:
                 down_count += ch['downloads']
             day_enter = last_month[0]['day'] + " - " + last_month[len(last_month) - 1]['day']   
             return {
-                "description": repo_info.get("description", ""), 
-                "home_url": repo_info.get("homepage", ""), 
+                "description": description, 
+                "home_url": home_url, 
                 "dependent_count": dependent_count, 
                 "down_count": down_count, 
                 "day_enter": day_enter
