@@ -1,3 +1,4 @@
+#根据开源软件的生命周期，人工维护一个EOL（End of Life）列表
 EOL LIST:
   - identifier: https://github.com/AFNetworking/AFNetworking
     repoName: AFNetworking
