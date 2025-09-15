@@ -152,9 +152,9 @@ def get_package_info(project_url: str) -> Tuple[Dict, str]:
             description = repo_info.get("description", "")
             home_url = repo_info.get("homepage", "")
         else:
-            description = data['description']
-            home_url = data['homepage']
-        version_data = data["versions"]
+            description = data.get('description', '')
+            home_url = data.get('homepage', '')
+        version_data = data.get("versions", {})
         *_, last_version = version_data.items()
         dependency = last_version[1].get("dependencies", {})
         dependent_count = len(dependency)
@@ -163,7 +163,7 @@ def get_package_info(project_url: str) -> Tuple[Dict, str]:
         response_down = requests.get(url_down)
         if response_down.status_code == 200:
             down_data = response_down.json()
-            last_month = down_data['downloads']
+            last_month = down_data.get('downloads', [])
             down_count = 0
             for ch in last_month:
                 down_count += ch['downloads']
