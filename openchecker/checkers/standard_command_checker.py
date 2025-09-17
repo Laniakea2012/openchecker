@@ -11,7 +11,7 @@ from platform_adapter import platform_manager
 logger = get_logger('openchecker.checkers.standard_command_checker')
 
 
-def run_criticality_score(project_url: str, config: dict) -> Tuple[Dict, str]:
+def run_criticality_score(project_url: str) -> Tuple[Dict, str]:
     """
     Run criticality score analysis
     
@@ -24,10 +24,7 @@ def run_criticality_score(project_url: str, config: dict) -> Tuple[Dict, str]:
     """
     if "github.com" in project_url:
         cmd = ["criticality_score", "--repo", project_url, "--format", "json"]
-        github_token = config["Github"]["access_key"]
-        env = os.environ.copy()
-        env["GITHUB_AUTH_TOKEN"] = github_token
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
             json_str = result.stderr
             json_str = json_str.replace("\n", "")
@@ -50,7 +47,7 @@ def run_criticality_score(project_url: str, config: dict) -> Tuple[Dict, str]:
         return None, "URL is not supported by criticality score."
 
 
-def run_scorecard_cli(project_url: str, config: dict) -> Tuple[Dict, str]:
+def run_scorecard_cli(project_url: str) -> Tuple[Dict, str]:
     """
     Run scorecard CLI analysis
     
@@ -61,11 +58,8 @@ def run_scorecard_cli(project_url: str, config: dict) -> Tuple[Dict, str]:
         Tuple[Dict, str]: (result, error)
     """
     if "github.com" in project_url:
-        github_token = config["Github"]["access_key"]
-        env = os.environ.copy()
-        env["GITHUB_AUTH_TOKEN"] = github_token
         cmd = ["scorecard", "--repo", project_url, "--format", "json"]
-        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
             try:
                 scorecard_json = json.loads(result.stdout)
@@ -338,7 +332,7 @@ def get_eol_info(project_url: str) -> Tuple[Dict, str]:
         logger.error("eol_info error: {}".format(e))
         return {"eol_status": "", "eol_release": "", "eol_time": ""}, None
 
-def criticality_score_checker(project_url: str, res_payload: dict, config: dict) -> None:
+def criticality_score_checker(project_url: str, res_payload: dict) -> None:
     """
     Criticality score checker
     
@@ -347,7 +341,7 @@ def criticality_score_checker(project_url: str, res_payload: dict, config: dict)
         res_payload: Response payload
         config: Configuration dictionary
     """
-    result, error = run_criticality_score(project_url, config)
+    result, error = run_criticality_score(project_url)
     if error is None:
         logger.info(f"criticality-score job done: {project_url}")
         res_payload["scan_results"]["criticality-score"] = result
@@ -356,7 +350,7 @@ def criticality_score_checker(project_url: str, res_payload: dict, config: dict)
         res_payload["scan_results"]["criticality-score"] = {"error": error}
 
 
-def scorecard_score_checker(project_url: str, res_payload: dict, config: dict) -> None:
+def scorecard_score_checker(project_url: str, res_payload: dict) -> None:
     """
     Scorecard score checker
     
@@ -364,7 +358,7 @@ def scorecard_score_checker(project_url: str, res_payload: dict, config: dict) -
         project_url: Project URL
         res_payload: Response payload
     """
-    result, error = run_scorecard_cli(project_url, config)
+    result, error = run_scorecard_cli(project_url)
     if error is None:
         logger.info(f"scorecard-score job done: {project_url}")
         res_payload["scan_results"]["scorecard-score"] = result
