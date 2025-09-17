@@ -574,8 +574,8 @@ def get_repository_score_from_local_csv(file_path, params=None):
 def get_github_token_info(token_obj):
     """Return expiry information given a github token."""
     rate_limit = token_obj.get_rate_limit()
-    near_expiry = rate_limit.core.remaining < 50
-    wait_time = (rate_limit.core.reset - datetime.datetime.now(datetime.timezone.utc)).seconds
+    near_expiry = rate_limit.rate.remaining < 50
+    wait_time = (rate_limit.rate.reset - datetime.datetime.now(datetime.timezone.utc)).seconds
     return near_expiry, wait_time
 
 

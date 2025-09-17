@@ -25,8 +25,9 @@ def run_criticality_score(project_url: str, config: dict) -> Tuple[Dict, str]:
     if "github.com" in project_url:
         cmd = ["criticality_score", "--repo", project_url, "--format", "json"]
         github_token = config["Github"]["access_key"]
-        os.environ['GITHUB_AUTH_TOKEN'] = github_token
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        env = os.environ.copy()
+        env["GITHUB_AUTH_TOKEN"] = github_token
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
         if result.returncode == 0:
             json_str = result.stderr
             json_str = json_str.replace("\n", "")
@@ -49,7 +50,7 @@ def run_criticality_score(project_url: str, config: dict) -> Tuple[Dict, str]:
         return None, "URL is not supported by criticality score."
 
 
-def run_scorecard_cli(project_url: str) -> Tuple[Dict, str]:
+def run_scorecard_cli(project_url: str, config: dict) -> Tuple[Dict, str]:
     """
     Run scorecard CLI analysis
     
@@ -60,8 +61,11 @@ def run_scorecard_cli(project_url: str) -> Tuple[Dict, str]:
         Tuple[Dict, str]: (result, error)
     """
     if "github.com" in project_url:
+        github_token = config["Github"]["access_key"]
+        env = os.environ.copy()
+        env["GITHUB_AUTH_TOKEN"] = github_token
         cmd = ["scorecard", "--repo", project_url, "--format", "json"]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
         if result.returncode == 0:
             try:
                 scorecard_json = json.loads(result.stdout)
@@ -352,7 +356,7 @@ def criticality_score_checker(project_url: str, res_payload: dict, config: dict)
         res_payload["scan_results"]["criticality-score"] = {"error": error}
 
 
-def scorecard_score_checker(project_url: str, res_payload: dict) -> None:
+def scorecard_score_checker(project_url: str, res_payload: dict, config: dict) -> None:
     """
     Scorecard score checker
     
@@ -360,7 +364,7 @@ def scorecard_score_checker(project_url: str, res_payload: dict) -> None:
         project_url: Project URL
         res_payload: Response payload
     """
-    result, error = run_scorecard_cli(project_url)
+    result, error = run_scorecard_cli(project_url, config)
     if error is None:
         logger.info(f"scorecard-score job done: {project_url}")
         res_payload["scan_results"]["scorecard-score"] = result

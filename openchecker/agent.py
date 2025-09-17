@@ -393,7 +393,7 @@ def _execute_commands(
         'webhooks-checker': lambda: webhooks_checker(project_url, res_payload, access_token),
         'changed-files-since-commit-detector': lambda: changed_files_detector(project_url, res_payload, commit_hash),
         'criticality-score': lambda: criticality_score_checker(project_url, res_payload, config),
-        'scorecard-score': lambda: scorecard_score_checker(project_url, res_payload),
+        'scorecard-score': lambda: scorecard_score_checker(project_url, res_payload, config),
         'code-count': lambda: code_count_checker(project_url, res_payload),
         'package-info': lambda: package_info_checker(project_url, res_payload),
         'ohpm-info': lambda: ohpm_info_checker(project_url, res_payload),
