@@ -153,9 +153,11 @@ def get_package_info(project_url: str) -> Tuple[Dict, str]:
             description = data.get('description', '')
             home_url = data.get('homepage', '')
         version_data = data.get("versions", {})
-        *_, last_version = version_data.items()
-        dependency = last_version[1].get("dependencies", {})
-        dependent_count = len(dependency)
+        dependent_count = 0
+        if version_data != {}:
+            *_, last_version = version_data.items()
+            dependency = last_version[1].get("dependencies", {})
+            dependent_count = len(dependency)
         
         url_down = f"https://api.npmjs.org/downloads/range/last-month/{package_name}"
         response_down = requests.get(url_down)
