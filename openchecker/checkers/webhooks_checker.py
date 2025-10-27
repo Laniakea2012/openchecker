@@ -16,13 +16,24 @@ def get_webhooks(project_url, access_token):
     repo_name = re.sub(r'\.git$', '', os.path.basename(project_url))
 
     if "github.com" in project_url:
-        # TODO
-        pass
+        url = f"https://api.github.com/repos/{owner_name}/{repo_name}/hooks?&page=1&per_page=100"
+        try:
+            headers = {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': f'token {access_token}'
+            }
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                hooks = response.json()
+                return hooks, None
+            else:
+                return [], "token invalid"
+        except Exception as e:
+            return [], "token invalid"
 
     elif "gitee.com" in project_url or "gitcode.com" in project_url:
         if "gitee.com" in project_url:
-            # TODO
-            pass
+            url = f"https://gitee.com/api/v5/repos/{owner_name}/{repo_name}/hooks?access_token={access_token}&page=1&per_page=100"
         else:
             url = f"https://api.gitcode.com/api/v5/repos/{owner_name}/{repo_name}/hooks?access_token={access_token}&page=1&per_page=100"
         try:
