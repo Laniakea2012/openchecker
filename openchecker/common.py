@@ -39,8 +39,10 @@ def list_workflow_files(repo_path: str, platform_type: str) -> List[str]:
         工作流文件路径列表
     """
     workflow_files = []
-    
-    workflows_dir = Path(repo_path) / f".{platform_type}" / "workflows"
+    if platform_type == "gitee":
+        workflows_dir = Path(repo_path) / ".workflows"
+    else:
+        workflows_dir = Path(repo_path) / f".{platform_type}" / "workflows"
     if workflows_dir.exists():
         for file_path in workflows_dir.glob("*.yml"):
             workflow_files.append(str(file_path))
