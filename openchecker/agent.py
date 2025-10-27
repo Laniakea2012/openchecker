@@ -28,6 +28,7 @@ from checkers.document_checker import (
     readme_opensource_checker
 )
 from checkers.fuzzing_checker import fuzzing_checker
+from checkers.dependency_update_tool_checker import dependency_update_tool_checker
 from checkers.packaging_checker import packaging_checker
 from checkers.pinned_dependencies_checker import pinned_dependencies_checker
 from checkers.release_checker import release_checker
@@ -403,6 +404,7 @@ def _execute_commands(
         'readme-opensource-checker': lambda: readme_opensource_checker(project_url, res_payload),
         'bestpractices-checker': lambda: bestpractices_checker(project_url, res_payload),
         'dangerous-workflow-checker': lambda: dangerous_workflow_checker(project_url, res_payload),
+        'dependency-update-tool-checker': lambda: dependency_update_tool_checker(project_url, res_payload),
         'fuzzing-checker': lambda: fuzzing_checker(project_url, res_payload),
         'packaging-checker': lambda: packaging_checker(project_url, res_payload),
         'pinned-dependencies-checker': lambda: pinned_dependencies_checker(project_url, res_payload),
