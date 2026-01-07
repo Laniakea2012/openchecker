@@ -97,7 +97,8 @@ def sonar_checker(project_url: str, res_payload: dict, config: dict) -> None:
         if error is None:
             logger.info(f"sonar-scanner finish scanning project: {project_url}, report querying...")
             logger.info(f"SonarQube project name: {sonar_project_name}")
-            logger.info(f"SonarQube dashboard URL: http://{sonar_config['host']}:{sonar_config['port']}/dashboard?id={sonar_project_name}")
+            dashboard_url = _build_sonar_url(sonar_config, f"/dashboard?id={sonar_project_name}")
+            logger.info(f"SonarQube dashboard URL: {dashboard_url}")
             
             sonar_result = _query_sonar_measures(sonar_project_name, sonar_config)
             
@@ -107,13 +108,13 @@ def sonar_checker(project_url: str, res_payload: dict, config: dict) -> None:
                 res_payload["scan_results"]["sonar-scanner"] = sonar_result
             else:
                 logger.warning(f"sonar-scanner completed but no metrics found: {project_url}")
-                logger.warning(f"Check SonarQube dashboard: http://{sonar_config['host']}:{sonar_config['port']}/dashboard?id={sonar_project_name}")
+                logger.warning(f"Check SonarQube dashboard: {_build_sonar_url(sonar_config, f'/dashboard?id={sonar_project_name}')}")
                 
                 # 提供更详细的诊断信息
                 diagnostic_info = {
                     "status": "no_metrics",
                     "project_key": sonar_project_name,
-                    "dashboard_url": f"http://{sonar_config['host']}:{sonar_config['port']}/dashboard?id={sonar_project_name}",
+                    "dashboard_url": _build_sonar_url(sonar_config, f"/dashboard?id={sonar_project_name}"),
                     "possible_causes": [
                         "Maven compilation may have failed silently",
                         "No source files were found to analyze",
@@ -226,7 +227,7 @@ def _get_analysis_logs(project_name: str, sonar_config: dict) -> dict:
     """
     try:
         logger.info(f"Querying analysis task history for project: {project_name}")
-        ce_activity_url = f"http://{sonar_config['host']}:{sonar_config['port']}/api/ce/activity"
+        ce_activity_url = _build_sonar_url(sonar_config, '/api/ce/activity')
         auth = (sonar_config.get("username"), sonar_config.get("password"))
         
         response = requests.get(
