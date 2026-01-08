@@ -2,10 +2,14 @@ import os
 import subprocess
 import json
 import re
+import time
 import requests
 import yaml
 from typing import Dict, Tuple, Any
 from logger import get_logger
+from aksk.default_request import DefaultRequest
+from helper import read_config
+from aksk.signer import Signer
 from platform_adapter import platform_manager
 
 logger = get_logger('openchecker.checkers.standard_command_checker')
@@ -216,29 +220,47 @@ def get_ohpm_info(project_url: str) -> Tuple[Dict, str]:
         Tuple[Dict, str]: (result, error)
     """
     try:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        abs_dir = os.path.dirname(os.path.dirname(script_dir))
-        file_path = os.path.join(abs_dir, 'config', 'ohpm_repo.json')
-        with open(file_path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
+        file_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(file_dir))
+        config_file = os.path.join(project_root, "config", "config.ini")
+        config = read_config(config_file)
+        access_key = config["AKSK"].get("access_key", "")
+        secret_key = config["AKSK"].get("secret_key", "")
         project_url = project_url.replace('.git', '')
-        for name, repo_address in data.items():
-            if repo_address.lower() == project_url.lower():
-                url = 'https://ohpm.openharmony.cn/ohpmweb/registry/oh-package/openapi/v1/detail/'+ name
-                response = requests.get(url)
-                if response.status_code == 200:
-                    repo_body = json.loads(response.text)
-                    repo_json = repo_body['body']
-                    down_count = repo_json['downloads']
-                    dependent = repo_json['dependencies']['total']
-                    bedependent = repo_json['dependent']['total']
-                    return {"down_count": down_count, "dependent": dependent, "bedependent": bedependent}, None
-                else:
-                    logger.error("Failed to get dependent、bedependent、down_count for repo: {} \n Error: {}".format(project_url, "Not found"))
-                    return {"down_count": False, "dependent": False, "bedependent": False}, "Not found"
-        return {"down_count": "", "dependent": "", "bedependent": ""}, None
+        path = '/ohpm/m2m/package/info'
+        body = json.dumps({
+            "repoAddress": project_url,
+            "packageName": "",
+            "metaDataVersion": "v2"
+        })
+        timestamp = str(int(time.time() * 1000))
+        # create signed request
+        req = DefaultRequest(access_key, secret_key)
+        req.set_method("POST")
+        req.set_url(path)
+        req.set_body(body)
+        req.set_timestamp(timestamp)
+        req.add_query_param("param0", path.lstrip('/'))
+        # sign the request
+        authorization = Signer.sign(req)
+        headers = {'authorization': authorization}
+        response = requests.request("post", "https://ohpm.openharmony.cn"+path, headers=headers, data=body)
+        if response.status_code == 200:
+            repo_body = json.loads(response.text)
+            repo_json = repo_body['body']
+            if len(repo_json) > 0:
+                down_count = repo_json[0]['downloadCount']
+                dependent = repo_json[0]['dependencyCount']
+                bedependent = repo_json[0]['dependentCount']
+                return {"down_count": down_count, "dependent": dependent, "bedependent": bedependent}, None
+            else:
+                logger.error("OHPM response body is empty for repo: {}".format(project_url))
+                return {"down_count": "", "dependent": "", "bedependent": ""}, None
+        else:
+            logger.error("Failed to get ohpm info for repo: {} \n Error: {}".format(project_url, "Not found"))
+            return {"down_count": False, "dependent": False, "bedependent": False}, "Not found"
     except Exception as e:
-        logger.error("parse_oat_txt error: {}".format(e))
+        logger.error("get_ohpm_info  error: {}".format(e))
         return {"down_count": "", "dependent": "", "bedependent": ""}, None
 
 def get_type_countries(project_url, type) -> Tuple[Dict, str]:

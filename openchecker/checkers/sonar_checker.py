@@ -163,7 +163,7 @@ def _check_sonar_project_exists(project_name: str, sonar_config: dict) -> bool:
             params={"projects": project_name},
             timeout=30
         )
-        
+
         if response.status_code == 200:
             logger.info("Call sonarqube projects search api success: 200")
             result = json.loads(response.text)
@@ -201,7 +201,6 @@ def _create_sonar_project(project_name: str, sonar_config: dict) -> None:
         }
         
         response = requests.post(create_api_url, auth=auth, data=payload, timeout=60)
-        
         if response.status_code == 200:
             logger.info("Call sonarqube projects create api success: 200")
             logger.info(f"SonarQube project {project_name} created successfully")
@@ -355,7 +354,7 @@ def _query_sonar_measures(project_name: str, sonar_config: dict) -> dict:
         
         params = {
             "component": project_name, 
-            "metricKeys": "coverage,complexity,duplicated_lines_density,lines"
+            "metricKeys": "coverage,complexity,duplicated_lines_density,lines,reliability_rating,sqale_rating,security_rating,security_review_rating"
         }
         
         response = requests.get(measures_api_url, auth=auth, params=params, timeout=30)
